@@ -1,4 +1,6 @@
 ﻿using ECommerce.Application.Features.Product.Commands.Create;
+using ECommerce.Application.Services.OrderService;
+using ECommerce.Application.Services.ProductService;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
@@ -18,6 +20,11 @@ namespace ECommerce.Application
         {
             services.AddMediator(typeof(CreateProductCommand).Assembly);
             services.AddTransient(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
+
+            // Business servisleri -> feature'lar arası erişim repository ile değil, bu servislerle yapılır.
+            // Scoped: kullandıkları repository/DbContext ile aynı ömür.
+            services.AddScoped<IProductService, ProductManager>();
+            services.AddScoped<IOrderService, OrderManager>();
 
             return services;
         }

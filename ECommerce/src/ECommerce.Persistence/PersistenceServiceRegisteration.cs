@@ -16,6 +16,8 @@ namespace ECommerce.Persistence
             // Repositories -> Application arayüzü ister, Persistence somut sınıfı verir.
             // Scoped: DbContext ile aynı ömür (istek başına bir tane).
             services.AddScoped<IProductRepository, ProductRepository>();
+            services.AddScoped<IOrderRepository, OrderRepository>();
+            services.AddScoped<IOrderItemRepository, OrderItemRepository>();
 
             return services;
         }
