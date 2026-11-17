@@ -1,4 +1,6 @@
 using ECommerce.Application.Features.Product.Commands.Create;
+using Uludag.Core.Mediation;
+using Uludag.Core.Mediation.Behaviors;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,6 +11,7 @@ builder.Services.AddControllers();
 // Mediator + Application katmanındaki tüm handler'lar.
 builder.Services.AddMediator(typeof(CreateProductCommand).Assembly);
 
+builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
 // Pipeline behavior örneği (sıra önemlidir, ilk eklenen en dışta çalışır):
 // builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
 
