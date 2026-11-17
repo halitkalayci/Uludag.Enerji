@@ -1,8 +1,17 @@
+using ECommerce.Application.Features.Product.Commands.Create;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
 builder.Services.AddControllers();
+
+// Mediator + Application katmanındaki tüm handler'lar.
+builder.Services.AddMediator(typeof(CreateProductCommand).Assembly);
+
+// Pipeline behavior örneği (sıra önemlidir, ilk eklenen en dışta çalışır):
+// builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
+
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 

@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Uludag.Core.Mediation;
 
 namespace ECommerce.Application.Features.Product.Commands.Create
 {
-    public class CreateProductCommand // komut varolmadan
+    public class CreateProductCommand : IRequest // komut varolmadan (geriye değer döndürmeyen istek)
     {
         // İki parçadan oluşur -> Komutun gövdesi, (Create işlemi yapılırken ne istiyosun?)
 
@@ -21,11 +17,12 @@ namespace ECommerce.Application.Features.Product.Commands.Create
 
 
         // varolması mantıklı..
-        public class CreateProductCommandHandler // Komut handlerı, işleyen kişi.
+        public class CreateProductCommandHandler : IRequestHandler<CreateProductCommand> // Komut handlerı, işleyen kişi.
         {
-            public void Handle(CreateProductCommand command)
+            public Task Handle(CreateProductCommand request, CancellationToken cancellationToken)
             {
-                Console.WriteLine($"Ürün oluşturuldu..");
+                Console.WriteLine("Ürün oluşturuldu..");
+                return Task.CompletedTask;
             }
         }
     }

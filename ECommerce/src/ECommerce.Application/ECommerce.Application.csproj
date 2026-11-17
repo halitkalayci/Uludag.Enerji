@@ -13,4 +13,8 @@
     <Folder Include="Features\Product\Queries\GetById\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Uludag.Core\Uludag.Core.csproj" />
+  </ItemGroup>
+
 </Project>
