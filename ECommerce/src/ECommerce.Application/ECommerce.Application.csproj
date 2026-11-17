@@ -6,4 +6,11 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Folder Include="Features\Product\Commands\Update\" />
+    <Folder Include="Features\Product\Mappers\" />
+    <Folder Include="Features\Product\Queries\GetAll\" />
+    <Folder Include="Features\Product\Queries\GetById\" />
+  </ItemGroup>
+
 </Project>

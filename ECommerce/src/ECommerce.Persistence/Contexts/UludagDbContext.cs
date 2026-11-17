@@ -22,9 +22,13 @@ namespace ECommerce.Persistence.Contexts
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<Product>()
+            /*modelBuilder.Entity<Product>()
                 .ToTable("Products")
                 .Property(i => i.Name).HasColumnType("NVARCHAR(100)").IsRequired(false);
+            */
+
+            // Assembly'deki (çalışma zamanındaki kodlar) tüm IEntityTypeConfiguration implementasyonlarını bul ve uygula.
+            modelBuilder.ApplyConfigurationsFromAssembly(typeof(UludagDbContext).Assembly);
 
             base.OnModelCreating(modelBuilder);
         }
