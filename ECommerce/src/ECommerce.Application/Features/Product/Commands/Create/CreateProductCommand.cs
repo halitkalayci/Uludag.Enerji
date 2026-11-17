@@ -1,4 +1,6 @@
-﻿using Uludag.Core.Mediation;
+﻿using ECommerce.Domain.Entities;
+using ECommerce.Persistence.Contexts;
+using Uludag.Core.Mediation;
 
 namespace ECommerce.Application.Features.Product.Commands.Create
 {
@@ -19,10 +21,26 @@ namespace ECommerce.Application.Features.Product.Commands.Create
         // varolması mantıklı..
         public class CreateProductCommandHandler : IRequestHandler<CreateProductCommand> // Komut handlerı, işleyen kişi.
         {
-            public Task Handle(CreateProductCommand request, CancellationToken cancellationToken)
+            // Dependency Injection
+            private readonly UludagDbContext uludagDbContext;
+            public CreateProductCommandHandler(UludagDbContext uludagDbContext)
             {
-                Console.WriteLine("Ürün oluşturuldu..");
-                return Task.CompletedTask;
+                this.uludagDbContext = uludagDbContext;
+            }
+
+
+            public async Task Handle(CreateProductCommand request, CancellationToken cancellationToken)
+            {
+                // Mapping
+                Domain.Entities.Product product = new()
+                {
+                    Name = request.Name,
+                    Price = new Domain.ValueObjects.Money(request.Amount, request.Currency),
+                    Stock = request.Stock
+                };
+
+                await uludagDbContext.Products.AddAsync(product);
+                await uludagDbContext.SaveChangesAsync();
             }
         }
     }

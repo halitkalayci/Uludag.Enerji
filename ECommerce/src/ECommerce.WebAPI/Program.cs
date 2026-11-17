@@ -1,7 +1,6 @@
 using ECommerce.Application;
-using ECommerce.Application.Features.Product.Commands.Create;
-using Uludag.Core.Mediation;
-using Uludag.Core.Mediation.Behaviors;
+using ECommerce.Persistence;
+
 
 // Entrypoint -> Giriş noktası..
 
@@ -17,6 +16,7 @@ builder.Services.AddControllers();
 builder.Services.AddApplicationServices();
 // Bu application katmanının bağımlılıkları..
 // Başka bir katman adına karar vermemeli.
+builder.Services.AddPersistenceServices();
 
 // caching
 // Pipeline behavior örneği (sıra önemlidir, ilk eklenen en dışta çalışır):
