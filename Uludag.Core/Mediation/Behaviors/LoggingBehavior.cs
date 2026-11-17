@@ -16,8 +16,8 @@ namespace Uludag.Core.Mediation.Behaviors
             CancellationToken cancellationToken)
         {
             Console.WriteLine("LoggingBehavior.1");
-            var response = next();
-            Console.WriteLine("LoggingBehavior.2");
+            var response = next(); // sonraki halkayı çağır
+            Console.WriteLine("LoggingBehavior.2"); // sonrasında..
             return response;
         }
     }

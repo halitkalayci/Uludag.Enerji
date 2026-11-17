@@ -10,8 +10,10 @@ builder.Services.AddControllers();
 
 // Mediator + Application katmanındaki tüm handler'lar.
 builder.Services.AddMediator(typeof(CreateProductCommand).Assembly);
-
+// auth
 builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
+// auth
+// caching
 // Pipeline behavior örneği (sıra önemlidir, ilk eklenen en dışta çalışır):
 // builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
 
