@@ -1,6 +1,9 @@
+using ECommerce.Application;
 using ECommerce.Application.Features.Product.Commands.Create;
 using Uludag.Core.Mediation;
 using Uludag.Core.Mediation.Behaviors;
+
+// Entrypoint -> Giriş noktası..
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,11 +11,13 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 
+
+// DI Container
 // Mediator + Application katmanındaki tüm handler'lar.
-builder.Services.AddMediator(typeof(CreateProductCommand).Assembly);
-// auth
-builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
-// auth
+builder.Services.AddApplicationServices();
+// Bu application katmanının bağımlılıkları..
+// Başka bir katman adına karar vermemeli.
+
 // caching
 // Pipeline behavior örneği (sıra önemlidir, ilk eklenen en dışta çalışır):
 // builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
