@@ -21,12 +21,11 @@ namespace ECommerce.Application.Features.Product.Commands.Create
         public class CreateProductCommandHandler : IRequestHandler<CreateProductCommand> // Komut handlerı, işleyen kişi.
         {
             // Dependency Injection
-            private readonly IProductRepository productRepository;
+            private readonly IProductRepository productRepository; // persistence tarafından çözülüyor (sarmallayan)
             public CreateProductCommandHandler(IProductRepository productRepository)
             {
                 this.productRepository = productRepository;
             }
-
 
             public async Task Handle(CreateProductCommand request, CancellationToken cancellationToken)
             {
@@ -39,7 +38,7 @@ namespace ECommerce.Application.Features.Product.Commands.Create
                 };
 
                 await productRepository.AddAsync(product, cancellationToken);
-            }
+            } 
         }
     }
 }
