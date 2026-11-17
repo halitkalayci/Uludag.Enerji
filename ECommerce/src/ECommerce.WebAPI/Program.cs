@@ -30,7 +30,15 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
+    // OpenAPI dokümanı -> /openapi/v1.json
     app.MapOpenApi();
+
+    // Swagger arayüzü -> /swagger
+    // Dokümanı kendisi üretmez; yukarıdaki /openapi/v1.json'u okuyup gösterir.
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/openapi/v1.json", "ECommerce API v1");
+    });
 }
 
 app.UseHttpsRedirection();
