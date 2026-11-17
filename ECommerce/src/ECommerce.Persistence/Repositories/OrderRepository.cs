@@ -28,6 +28,13 @@ namespace ECommerce.Persistence.Repositories
                 .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
         }
 
+        public async Task<Order?> GetByIdWithItemsAsync(Guid id, CancellationToken cancellationToken = default)
+        {
+            return await uludagDbContext.Orders
+                .Include(o => o.Items)
+                .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
+        }
+
         // order.Items doluysa kalemler de aynı SaveChanges ile (tek seferde) eklenir.
         public async Task AddAsync(Order order, CancellationToken cancellationToken = default)
         {

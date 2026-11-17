@@ -7,7 +7,7 @@ namespace ECommerce.Application.Features.Order.Commands.Create
     // Siparişi kalemleriyle birlikte tek seferde (tek SaveChanges) oluşturur.
     // Geriye bool döner: true -> oluşturuldu, false -> kalemlerdeki ürünlerden biri bulunamadı.
     // OrderDate ve fiyatlar istemciden alınmaz, sunucu belirler.
-    // NOT: Ürün stoğu henüz düşülmüyor (bilinen risk, sonra ele alınacak).
+    // Her kalemin adedi kadar ürün stoğundan düşülür; stok yetmezse sipariş oluşmaz.
     public class CreateOrderCommand : IRequest<bool>
     {
         // Siparişin para birimi. Kalemlerdeki tüm ürünler bu para biriminde olmalı.
@@ -44,18 +44,46 @@ namespace ECommerce.Application.Features.Order.Commands.Create
                     OrderDate = DateTime.UtcNow
                 };
 
-                decimal totalPrice = 0;
+                // 1) Doğrulama: hiçbir şeye dokunmadan önce tüm kalemleri kontrol et.
+                // Aynı ürün birden fazla satırda gelebilir; stok kontrolü ürün bazında toplam adetle yapılır.
+                Dictionary<Guid, Domain.Entities.Product> products = new();
+                Dictionary<Guid, int> requestedAmounts = new();
                 foreach (CreateOrderItemDto item in request.Items)
                 {
                     if (item.Amount <= 0)
                         throw new ArgumentException("Amount must be greater than zero.");
 
-                    Domain.Entities.Product? product = await productService.GetByIdAsync(item.ProductId, cancellationToken);
-                    if (product is null)
-                        return false;
+                    if (!products.ContainsKey(item.ProductId))
+                    {
+                        Domain.Entities.Product? product = await productService.GetByIdAsync(item.ProductId, cancellationToken);
+                        if (product is null)
+                            return false;
 
-                    if (product.Price.Currency != request.Currency)
-                        throw new ArgumentException("Product currency does not match the order currency.");
+                        if (product.Price.Currency != request.Currency)
+                            throw new ArgumentException("Product currency does not match the order currency.");
+
+                        products[item.ProductId] = product;
+                        requestedAmounts[item.ProductId] = 0;
+                    }
+
+                    requestedAmounts[item.ProductId] += item.Amount;
+                }
+
+                foreach ((Guid productId, int amount) in requestedAmounts)
+                {
+                    if (!productService.HasEnoughStock(products[productId], amount))
+                        throw new ArgumentException($"Insufficient stock for product {productId}.");
+                }
+
+                // 2) Stokları düş (doğrulama geçtiği için burada yetersiz stok hatası beklenmez).
+                foreach ((Guid productId, int amount) in requestedAmounts)
+                    await productService.DecreaseStockAsync(products[productId], amount, cancellationToken);
+
+                // 3) Siparişi kalemleriyle oluştur.
+                decimal totalPrice = 0;
+                foreach (CreateOrderItemDto item in request.Items)
+                {
+                    Domain.Entities.Product product = products[item.ProductId];
 
                     // Mapping (her entity kendi Money örneğini almalı; product.Price paylaşılmaz)
                     Domain.Entities.OrderItem orderItem = new()

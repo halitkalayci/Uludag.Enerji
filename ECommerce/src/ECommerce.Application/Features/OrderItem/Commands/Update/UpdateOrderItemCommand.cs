@@ -1,12 +1,14 @@
 using ECommerce.Application.Services.OrderService;
+using ECommerce.Application.Services.ProductService;
 using ECommerce.Application.Services.Repositories;
 using Uludag.Core.Mediation;
 
 namespace ECommerce.Application.Features.OrderItem.Commands.Update
 {
-    // Geriye bool döner: true -> güncellendi, false -> kalem ya da siparişi bulunamadı.
+    // Geriye bool döner: true -> güncellendi, false -> kalem, siparişi ya da ürünü bulunamadı.
     // Yalnızca adet değişir. Ürün değiştirmek için kalem silinip yenisi eklenmeli.
     // Birim fiyat, kalem eklendiği andaki fiyattır (ürün fiyatı sonradan değişse de sipariş etkilenmez).
+    // Stok, adet farkı kadar düşülür (artışta) ya da iade edilir (azalışta).
     public class UpdateOrderItemCommand : IRequest<bool>
     {
         public Guid Id { get; set; }
@@ -15,13 +17,18 @@ namespace ECommerce.Application.Features.OrderItem.Commands.Update
         public class UpdateOrderItemCommandHandler : IRequestHandler<UpdateOrderItemCommand, bool>
         {
             // Dependency Injection
-            // Kendi entity'si -> repository. Başka entity (Order) -> servis.
+            // Kendi entity'si -> repository. Başka entity'ler (Order, Product) -> servis.
             private readonly IOrderItemRepository orderItemRepository;
             private readonly IOrderService orderService;
-            public UpdateOrderItemCommandHandler(IOrderItemRepository orderItemRepository, IOrderService orderService)
+            private readonly IProductService productService;
+            public UpdateOrderItemCommandHandler(
+                IOrderItemRepository orderItemRepository,
+                IOrderService orderService,
+                IProductService productService)
             {
                 this.orderItemRepository = orderItemRepository;
                 this.orderService = orderService;
+                this.productService = productService;
             }
 
             public async Task<bool> Handle(UpdateOrderItemCommand request, CancellationToken cancellationToken)
@@ -37,8 +44,23 @@ namespace ECommerce.Application.Features.OrderItem.Commands.Update
                 if (order is null)
                     return false;
 
+                Domain.Entities.Product? product = await productService.GetByIdAsync(orderItem.ProductId, cancellationToken);
+                if (product is null)
+                    return false;
+
+                int amountDifference = request.Amount - orderItem.Amount;
+
+                if (amountDifference > 0 && !productService.HasEnoughStock(product, amountDifference))
+                    throw new ArgumentException($"Insufficient stock for product {product.Id}.");
+
                 decimal unitPrice = orderItem.TotalPrice.Amount / orderItem.Amount;
                 decimal oldTotal = orderItem.TotalPrice.Amount;
+
+                // Stok farkı: artışta düş, azalışta iade et.
+                if (amountDifference > 0)
+                    await productService.DecreaseStockAsync(product, amountDifference, cancellationToken);
+                else if (amountDifference < 0)
+                    await productService.IncreaseStockAsync(product, -amountDifference, cancellationToken);
 
                 // Mapping
                 orderItem.Amount = request.Amount;

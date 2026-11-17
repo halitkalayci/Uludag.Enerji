@@ -7,5 +7,10 @@ namespace ECommerce.Application.Services.ProductService
     {
         Task<Domain.Entities.Product?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
+        // Stok kuralları Product'a aittir; sipariş tarafı stoğa yalnızca bu metotlarla dokunur.
+        bool HasEnoughStock(Domain.Entities.Product product, int amount);
+        // Stok yetersizse ArgumentException fırlatır.
+        Task DecreaseStockAsync(Domain.Entities.Product product, int amount, CancellationToken cancellationToken = default);
+        Task IncreaseStockAsync(Domain.Entities.Product product, int amount, CancellationToken cancellationToken = default);
     }
 }

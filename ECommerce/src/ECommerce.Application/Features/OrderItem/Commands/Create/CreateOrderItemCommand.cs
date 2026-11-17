@@ -8,7 +8,7 @@ namespace ECommerce.Application.Features.OrderItem.Commands.Create
     // Var olan bir siparişe tek kalem ekler.
     // Geriye bool döner: true -> eklendi, false -> sipariş ya da ürün bulunamadı.
     // Fiyat istemciden alınmaz; ürünün güncel fiyatından hesaplanır (istemci fiyatı manipüle edemesin).
-    // NOT: Ürün stoğu henüz düşülmüyor (bilinen risk, sonra ele alınacak).
+    // Kalemin adedi kadar ürün stoğundan düşülür; stok yetmezse kalem eklenmez.
     public class CreateOrderItemCommand : IRequest<bool>
     {
         public Guid OrderId { get; set; }
@@ -48,6 +48,9 @@ namespace ECommerce.Application.Features.OrderItem.Commands.Create
                 if (product.Price.Currency != order.TotalPrice.Currency)
                     throw new ArgumentException("Product currency does not match the order currency.");
 
+                if (!productService.HasEnoughStock(product, request.Amount))
+                    throw new ArgumentException($"Insufficient stock for product {product.Id}.");
+
                 // Mapping (her entity kendi Money örneğini almalı; product.Price paylaşılmaz)
                 Domain.Entities.OrderItem orderItem = new()
                 {
@@ -57,6 +60,7 @@ namespace ECommerce.Application.Features.OrderItem.Commands.Create
                     TotalPrice = new Domain.ValueObjects.Money(product.Price.Amount * request.Amount, product.Price.Currency)
                 };
 
+                await productService.DecreaseStockAsync(product, request.Amount, cancellationToken);
                 await orderItemRepository.AddAsync(orderItem, cancellationToken);
 
                 // Sipariş toplamına kalemin tutarını ekle.
