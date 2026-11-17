@@ -1,11 +1,8 @@
-﻿using ECommerce.Persistence.Contexts;
+﻿using ECommerce.Application.Services.Repositories;
+using ECommerce.Persistence.Contexts;
+using ECommerce.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ECommerce.Persistence
 {
@@ -15,6 +12,11 @@ namespace ECommerce.Persistence
         {
             // bağlandığımız db..
             services.AddDbContext<UludagDbContext>(opt => opt.UseInMemoryDatabase("Db"));
+
+            // Repositories -> Application arayüzü ister, Persistence somut sınıfı verir.
+            // Scoped: DbContext ile aynı ömür (istek başına bir tane).
+            services.AddScoped<IProductRepository, ProductRepository>();
+
             return services;
         }
     }

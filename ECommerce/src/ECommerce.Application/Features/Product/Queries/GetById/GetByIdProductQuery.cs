@@ -1,5 +1,4 @@
-using ECommerce.Persistence.Contexts;
-using Microsoft.EntityFrameworkCore;
+using ECommerce.Application.Services.Repositories;
 using Uludag.Core.Mediation;
 
 namespace ECommerce.Application.Features.Product.Queries.GetById
@@ -12,17 +11,15 @@ namespace ECommerce.Application.Features.Product.Queries.GetById
         public class GetByIdProductQueryHandler : IRequestHandler<GetByIdProductQuery, ProductResponse?>
         {
             // Dependency Injection
-            private readonly UludagDbContext uludagDbContext;
-            public GetByIdProductQueryHandler(UludagDbContext uludagDbContext)
+            private readonly IProductRepository productRepository;
+            public GetByIdProductQueryHandler(IProductRepository productRepository)
             {
-                this.uludagDbContext = uludagDbContext;
+                this.productRepository = productRepository;
             }
 
             public async Task<ProductResponse?> Handle(GetByIdProductQuery request, CancellationToken cancellationToken)
             {
-                Domain.Entities.Product? product = await uludagDbContext.Products
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(p => p.Id == request.Id, cancellationToken);
+                Domain.Entities.Product? product = await productRepository.GetByIdAsync(request.Id, cancellationToken);
 
                 if (product is null)
                     return null;

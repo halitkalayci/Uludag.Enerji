@@ -1,5 +1,4 @@
-using ECommerce.Persistence.Contexts;
-using Microsoft.EntityFrameworkCore;
+using ECommerce.Application.Services.Repositories;
 using Uludag.Core.Mediation;
 
 namespace ECommerce.Application.Features.Product.Queries.GetAll
@@ -10,17 +9,18 @@ namespace ECommerce.Application.Features.Product.Queries.GetAll
         public class GetAllProductQueryHandler : IRequestHandler<GetAllProductQuery, List<ProductResponse>>
         {
             // Dependency Injection
-            private readonly UludagDbContext uludagDbContext;
-            public GetAllProductQueryHandler(UludagDbContext uludagDbContext)
+            private readonly IProductRepository productRepository;
+            public GetAllProductQueryHandler(IProductRepository productRepository)
             {
-                this.uludagDbContext = uludagDbContext;
+                this.productRepository = productRepository;
             }
 
             public async Task<List<ProductResponse>> Handle(GetAllProductQuery request, CancellationToken cancellationToken)
             {
-                // Mapping (projeksiyon -> SQL'de sadece gereken kolonlar seçilir)
-                return await uludagDbContext.Products
-                    .AsNoTracking()
+                List<Domain.Entities.Product> products = await productRepository.GetAllAsync(cancellationToken);
+
+                // Mapping
+                return products
                     .Select(p => new ProductResponse
                     {
                         Id = p.Id,
@@ -29,7 +29,7 @@ namespace ECommerce.Application.Features.Product.Queries.GetAll
                         Currency = p.Price.Currency,
                         Stock = p.Stock
                     })
-                    .ToListAsync(cancellationToken);
+                    .ToList();
             }
         }
     }

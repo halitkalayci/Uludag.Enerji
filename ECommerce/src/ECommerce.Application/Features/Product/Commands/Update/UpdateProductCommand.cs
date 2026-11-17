@@ -1,5 +1,4 @@
-using ECommerce.Persistence.Contexts;
-using Microsoft.EntityFrameworkCore;
+using ECommerce.Application.Services.Repositories;
 using Uludag.Core.Mediation;
 
 namespace ECommerce.Application.Features.Product.Commands.Update
@@ -16,16 +15,15 @@ namespace ECommerce.Application.Features.Product.Commands.Update
         public class UpdateProductCommandHandler : IRequestHandler<UpdateProductCommand, bool>
         {
             // Dependency Injection
-            private readonly UludagDbContext uludagDbContext;
-            public UpdateProductCommandHandler(UludagDbContext uludagDbContext)
+            private readonly IProductRepository productRepository;
+            public UpdateProductCommandHandler(IProductRepository productRepository)
             {
-                this.uludagDbContext = uludagDbContext;
+                this.productRepository = productRepository;
             }
 
             public async Task<bool> Handle(UpdateProductCommand request, CancellationToken cancellationToken)
             {
-                Domain.Entities.Product? product = await uludagDbContext.Products
-                    .FirstOrDefaultAsync(p => p.Id == request.Id, cancellationToken);
+                Domain.Entities.Product? product = await productRepository.GetByIdAsync(request.Id, cancellationToken);
 
                 if (product is null)
                     return false;
@@ -35,7 +33,7 @@ namespace ECommerce.Application.Features.Product.Commands.Update
                 product.Price = new Domain.ValueObjects.Money(request.Amount, request.Currency);
                 product.Stock = request.Stock;
 
-                await uludagDbContext.SaveChangesAsync(cancellationToken);
+                await productRepository.UpdateAsync(product, cancellationToken);
                 return true;
             }
         }

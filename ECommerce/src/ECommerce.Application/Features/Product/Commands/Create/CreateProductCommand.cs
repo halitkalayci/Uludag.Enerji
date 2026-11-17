@@ -1,5 +1,4 @@
-﻿using ECommerce.Domain.Entities;
-using ECommerce.Persistence.Contexts;
+﻿using ECommerce.Application.Services.Repositories;
 using Uludag.Core.Mediation;
 
 namespace ECommerce.Application.Features.Product.Commands.Create
@@ -13,7 +12,7 @@ namespace ECommerce.Application.Features.Product.Commands.Create
         public string Currency { get; set; }
         public int Stock { get; set; }
 
-        // İkinci parça -> Commandın handleri 
+        // İkinci parça -> Commandın handleri
         // Bu komut geldiğinde ne olacak?
         // Gövdeyi aldı işlemi yapacak.
 
@@ -22,10 +21,10 @@ namespace ECommerce.Application.Features.Product.Commands.Create
         public class CreateProductCommandHandler : IRequestHandler<CreateProductCommand> // Komut handlerı, işleyen kişi.
         {
             // Dependency Injection
-            private readonly UludagDbContext uludagDbContext;
-            public CreateProductCommandHandler(UludagDbContext uludagDbContext)
+            private readonly IProductRepository productRepository;
+            public CreateProductCommandHandler(IProductRepository productRepository)
             {
-                this.uludagDbContext = uludagDbContext;
+                this.productRepository = productRepository;
             }
 
 
@@ -39,8 +38,7 @@ namespace ECommerce.Application.Features.Product.Commands.Create
                     Stock = request.Stock
                 };
 
-                await uludagDbContext.Products.AddAsync(product);
-                await uludagDbContext.SaveChangesAsync();
+                await productRepository.AddAsync(product, cancellationToken);
             }
         }
     }
