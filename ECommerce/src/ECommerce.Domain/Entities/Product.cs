@@ -6,7 +6,7 @@ namespace ECommerce.Domain.Entities
     public class Product
     {
         public Guid Id { get; set; }
-        public Money Price { get; set; }
+        public Money Price { get; set; } = null!;
         public string? Name { get; set; }
         public int Stock { get; set; }
     }

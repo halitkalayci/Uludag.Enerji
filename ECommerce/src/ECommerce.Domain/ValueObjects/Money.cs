@@ -11,8 +11,8 @@ namespace ECommerce.Domain.ValueObjects
     // record => 
     public sealed record Money
     {
-        public decimal Amount { get; set; }
-        public string Currency { get; set; } = "TRY";
+        public decimal Amount { get; init; }
+        public string Currency { get; init; } = "TRY";
 
         // Para birimi ve miktarını temsil eden bir değer nesnesi.
         // Kurallar yalnızca bu sınıfın içinde tanımlanır.

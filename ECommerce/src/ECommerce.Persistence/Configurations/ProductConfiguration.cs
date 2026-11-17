@@ -15,10 +15,22 @@ namespace ECommerce.Persistence.Configurations
     {
         public void Configure(EntityTypeBuilder<Product> builder)
         {
-            builder.ToTable("Products")
+            builder
                 .Property(i => i.Name)
-                .HasColumnType("NVARCHAR(100)")
+                .HasMaxLength(100)
                 .IsRequired(false);
+
+            builder.OwnsOne(p => p.Price, price =>
+            {
+                price.Property(m => m.Amount)
+                    .HasPrecision(18, 2);
+
+                price.Property(m => m.Currency)
+                    .HasMaxLength(3)
+                    .IsRequired();
+            });
+
+            builder.Navigation(p => p.Price).IsRequired();
         }
     }
 }
