@@ -1,3 +1,4 @@
+using ECommerce.Application.Features.Order.Mappers;
 using ECommerce.Application.Features.Order.Rules;
 using ECommerce.Application.Services.Repositories;
 using Uludag.Core.Mediation;
@@ -26,13 +27,7 @@ namespace ECommerce.Application.Features.Order.Queries.GetById
                 orderBusinessRules.OrderShouldExistWhenSelected(order);
 
                 // Mapping
-                return new OrderResponse
-                {
-                    Id = order.Id,
-                    OrderDate = order.OrderDate,
-                    TotalPrice = order.TotalPrice.Amount,
-                    Currency = order.TotalPrice.Currency
-                };
+                return OrderMapper.MapOrderToResponse(order);
             }
         }
     }

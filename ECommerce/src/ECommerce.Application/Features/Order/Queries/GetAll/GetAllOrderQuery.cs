@@ -1,3 +1,4 @@
+using ECommerce.Application.Features.Order.Mappers;
 using ECommerce.Application.Services.Repositories;
 using Uludag.Core.Mediation;
 
@@ -20,15 +21,7 @@ namespace ECommerce.Application.Features.Order.Queries.GetAll
                 List<Domain.Entities.Order> orders = await orderRepository.GetAllAsync(cancellationToken);
 
                 // Mapping
-                return orders
-                    .Select(o => new OrderResponse
-                    {
-                        Id = o.Id,
-                        OrderDate = o.OrderDate,
-                        TotalPrice = o.TotalPrice.Amount,
-                        Currency = o.TotalPrice.Currency
-                    })
-                    .ToList();
+                return OrderMapper.MapOrdersToResponses(orders);
             }
         }
     }

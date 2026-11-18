@@ -1,3 +1,4 @@
+using ECommerce.Application.Features.OrderItem.Mappers;
 using ECommerce.Application.Features.OrderItem.Rules;
 using ECommerce.Application.Services.OrderService;
 using ECommerce.Application.Services.ProductService;
@@ -52,15 +53,13 @@ namespace ECommerce.Application.Features.OrderItem.Commands.Update
                 // Adet artıyorsa artış kadar stok gerekir (azalışta kural her zaman sağlanır).
                 productService.StockShouldBeEnough(product, amountDifference);
 
-                decimal unitPrice = orderItem.TotalPrice.Amount / orderItem.Amount;
                 decimal oldTotal = orderItem.TotalPrice.Amount;
 
                 // Stok farkı: artışta düşer, azalışta iade edilir (yön kararı servisin işi).
                 await productService.ChangeStockByAmountDifferenceAsync(product, amountDifference, cancellationToken);
 
                 // Mapping
-                orderItem.Amount = request.Amount;
-                orderItem.TotalPrice = new Domain.ValueObjects.Money(unitPrice * request.Amount, orderItem.TotalPrice.Currency);
+                OrderItemMapper.MapUpdateCommandToOrderItem(request, orderItem);
 
                 await orderItemRepository.UpdateAsync(orderItem, cancellationToken);
 

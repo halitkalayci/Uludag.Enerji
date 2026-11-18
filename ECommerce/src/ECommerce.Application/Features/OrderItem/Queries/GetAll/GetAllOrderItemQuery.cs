@@ -1,3 +1,4 @@
+using ECommerce.Application.Features.OrderItem.Mappers;
 using ECommerce.Application.Services.Repositories;
 using Uludag.Core.Mediation;
 
@@ -20,17 +21,7 @@ namespace ECommerce.Application.Features.OrderItem.Queries.GetAll
                 List<Domain.Entities.OrderItem> orderItems = await orderItemRepository.GetAllAsync(cancellationToken);
 
                 // Mapping
-                return orderItems
-                    .Select(i => new OrderItemResponse
-                    {
-                        Id = i.Id,
-                        OrderId = i.OrderId,
-                        ProductId = i.ProductId,
-                        Amount = i.Amount,
-                        TotalPrice = i.TotalPrice.Amount,
-                        Currency = i.TotalPrice.Currency
-                    })
-                    .ToList();
+                return OrderItemMapper.MapOrderItemsToResponses(orderItems);
             }
         }
     }

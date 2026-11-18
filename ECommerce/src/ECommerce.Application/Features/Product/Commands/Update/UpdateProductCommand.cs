@@ -1,3 +1,4 @@
+using ECommerce.Application.Features.Product.Mappers;
 using ECommerce.Application.Features.Product.Rules;
 using ECommerce.Application.Services.Repositories;
 using Uludag.Core.Mediation;
@@ -30,9 +31,7 @@ namespace ECommerce.Application.Features.Product.Commands.Update
                 productBusinessRules.ProductShouldExistWhenSelected(product);
 
                 // Mapping
-                product.Name = request.Name;
-                product.Price = new Domain.ValueObjects.Money(request.Amount, request.Currency);
-                product.Stock = request.Stock;
+                ProductMapper.MapUpdateCommandToProduct(request, product);
 
                 await productRepository.UpdateAsync(product, cancellationToken);
             }

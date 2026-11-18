@@ -1,3 +1,4 @@
+using ECommerce.Application.Features.Order.Mappers;
 using ECommerce.Application.Features.Order.Rules;
 using ECommerce.Application.Services.Repositories;
 using Uludag.Core.Mediation;
@@ -28,7 +29,7 @@ namespace ECommerce.Application.Features.Order.Commands.Update
                 orderBusinessRules.OrderShouldExistWhenSelected(order);
 
                 // Mapping
-                order.OrderDate = request.OrderDate;
+                OrderMapper.MapUpdateCommandToOrder(request, order);
 
                 await orderRepository.UpdateAsync(order, cancellationToken);
             }

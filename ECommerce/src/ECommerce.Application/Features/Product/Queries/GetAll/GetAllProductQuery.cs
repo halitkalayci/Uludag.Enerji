@@ -1,3 +1,4 @@
+using ECommerce.Application.Features.Product.Mappers;
 using ECommerce.Application.Services.Repositories;
 using Uludag.Core.Mediation;
 
@@ -20,16 +21,7 @@ namespace ECommerce.Application.Features.Product.Queries.GetAll
                 List<Domain.Entities.Product> products = await productRepository.GetAllAsync(cancellationToken);
 
                 // Mapping
-                return products
-                    .Select(p => new ProductResponse
-                    {
-                        Id = p.Id,
-                        Name = p.Name,
-                        Amount = p.Price.Amount,
-                        Currency = p.Price.Currency,
-                        Stock = p.Stock
-                    })
-                    .ToList();
+                return ProductMapper.MapProductsToResponses(products);
             }
         }
     }

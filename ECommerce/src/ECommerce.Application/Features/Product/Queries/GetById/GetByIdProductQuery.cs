@@ -1,3 +1,4 @@
+using ECommerce.Application.Features.Product.Mappers;
 using ECommerce.Application.Features.Product.Rules;
 using ECommerce.Application.Services.Repositories;
 using Uludag.Core.Mediation;
@@ -26,14 +27,7 @@ namespace ECommerce.Application.Features.Product.Queries.GetById
                 productBusinessRules.ProductShouldExistWhenSelected(product);
 
                 // Mapping
-                return new ProductResponse
-                {
-                    Id = product.Id,
-                    Name = product.Name,
-                    Amount = product.Price.Amount,
-                    Currency = product.Price.Currency,
-                    Stock = product.Stock
-                };
+                return ProductMapper.MapProductToResponse(product);
             }
         }
     }

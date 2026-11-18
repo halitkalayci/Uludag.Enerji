@@ -1,3 +1,4 @@
+using ECommerce.Application.Features.OrderItem.Mappers;
 using ECommerce.Application.Features.OrderItem.Rules;
 using ECommerce.Application.Services.OrderService;
 using ECommerce.Application.Services.ProductService;
@@ -48,14 +49,8 @@ namespace ECommerce.Application.Features.OrderItem.Commands.Create
                 orderItemBusinessRules.ProductCurrencyShouldMatchOrderCurrency(product, order.TotalPrice.Currency);
                 productService.StockShouldBeEnough(product, request.Amount);
 
-                // Mapping (her entity kendi Money örneğini almalı; product.Price paylaşılmaz)
-                Domain.Entities.OrderItem orderItem = new()
-                {
-                    OrderId = order.Id,
-                    ProductId = product.Id,
-                    Amount = request.Amount,
-                    TotalPrice = new Domain.ValueObjects.Money(product.Price.Amount * request.Amount, product.Price.Currency)
-                };
+                // Mapping
+                Domain.Entities.OrderItem orderItem = OrderItemMapper.MapCreateCommandToOrderItem(request, product);
 
                 await productService.DecreaseStockAsync(product, request.Amount, cancellationToken);
                 await orderItemRepository.AddAsync(orderItem, cancellationToken);

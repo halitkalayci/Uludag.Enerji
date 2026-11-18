@@ -1,3 +1,4 @@
+using ECommerce.Application.Features.OrderItem.Mappers;
 using ECommerce.Application.Features.OrderItem.Rules;
 using ECommerce.Application.Services.Repositories;
 using Uludag.Core.Mediation;
@@ -26,15 +27,7 @@ namespace ECommerce.Application.Features.OrderItem.Queries.GetById
                 orderItemBusinessRules.OrderItemShouldExistWhenSelected(orderItem);
 
                 // Mapping
-                return new OrderItemResponse
-                {
-                    Id = orderItem.Id,
-                    OrderId = orderItem.OrderId,
-                    ProductId = orderItem.ProductId,
-                    Amount = orderItem.Amount,
-                    TotalPrice = orderItem.TotalPrice.Amount,
-                    Currency = orderItem.TotalPrice.Currency
-                };
+                return OrderItemMapper.MapOrderItemToResponse(orderItem);
             }
         }
     }
