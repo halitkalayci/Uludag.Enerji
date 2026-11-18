@@ -39,10 +39,20 @@ namespace ECommerce.Persistence.Seeds
                 };
                 await context.Users.AddAsync(admin);
             }
+            // Güvenlik: Register herkese açık. Bu e-postayla başkası önceden kayıt olduysa, şifresini bilmeden
+            // o hesaba Admin verilmez -> uygulama açılmaz, yönetici durumu fark eder.
+            else if (!HashingHelper.VerifyPasswordHash(options.Password, admin.PasswordHash, admin.PasswordSalt))
+            {
+                throw new InvalidOperationException(
+                    $"AdminSeed: '{options.Email}' e-postasıyla kayıtlı bir hesap zaten var ve şifresi AdminSeed şifresiyle uyuşmuyor. " +
+                    "Admin yetkisi verilmedi. Farklı bir AdminSeed e-postası kullanın veya hesabı kontrol edin.");
+            }
 
             if (!admin.UserOperationClaims.Any(uoc => uoc.OperationClaimId == OperationClaimSeeds.AdminId))
             {
-                admin.UserOperationClaims.Add(new UserOperationClaim
+                // Doğrudan DbSet'e eklenir: Id önceden atanmış bir kaydı mevcut kullanıcının koleksiyonuna eklemek
+                // EF'in onu "var olan kayıt" sanıp UPDATE çalıştırmasına yol açar.
+                await context.UserOperationClaims.AddAsync(new UserOperationClaim
                 {
                     Id = Guid.NewGuid(),
                     UserId = admin.Id,
