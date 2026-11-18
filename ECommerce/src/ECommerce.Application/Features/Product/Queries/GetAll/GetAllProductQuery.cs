@@ -6,11 +6,10 @@ using Uludag.Core.Mediation;
 namespace ECommerce.Application.Features.Product.Queries.GetAll
 {
     // Gövdesi boş sorgu: tüm ürünleri ister.
-    public class GetAllProductQuery : IRequest<List<ProductResponse>>, ISecuredRequest
+    public class GetAllProductQuery : IRequest<List<ProductResponse>>
     {
         // Yetki: Product.Admin veya Product.Read claim'lerinden biri yeterli (global Admin her zaman geçer).
         // Açık (explicit) implementasyon: public property olmaz, JSON gövdesine / Swagger'a girmez.
-        string[] ISecuredRequest.Roles => [ProductOperationClaims.Admin, ProductOperationClaims.Read];
 
         public class GetAllProductQueryHandler : IRequestHandler<GetAllProductQuery, List<ProductResponse>>
         {
