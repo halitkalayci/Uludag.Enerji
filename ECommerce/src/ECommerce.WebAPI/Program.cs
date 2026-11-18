@@ -1,5 +1,6 @@
 using ECommerce.Application;
 using ECommerce.Persistence;
+using ECommerce.Persistence.Seeds;
 using ECommerce.WebAPI.Middlewares;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Uludag.Core.Security.JWT;
@@ -48,6 +49,11 @@ builder.Services
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
+
+// İlk yönetici -> "AdminSeed" ayarındaki kullanıcı yoksa oluşturulur ve global "Admin" claim'i verilir.
+// Ayar tanımlı değilse hiçbir şey yapılmaz.
+AdminSeedOptions? adminSeedOptions = builder.Configuration.GetSection("AdminSeed").Get<AdminSeedOptions>();
+await app.Services.SeedAdminUserAsync(adminSeedOptions);
 
 // Rules sınıflarının fırlattığı BusinessException / NotFoundException -> 400 / 404.
 // Pipeline'ın en başında: sonraki tüm middleware'ler ve controller'lar bunun içinde çalışır.
