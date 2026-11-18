@@ -1,13 +1,18 @@
 using ECommerce.Application.Features.Order.Mappers;
 using ECommerce.Application.Features.Order.Rules;
 using ECommerce.Application.Services.Repositories;
+using ECommerce.Application.Features.Order.Constants;
 using Uludag.Core.Mediation;
 
 namespace ECommerce.Application.Features.Order.Queries.GetById
 {
     // Sorgu -> geriye değer döndüren istek. Sipariş yoksa NotFoundException fırlar (null dönmez).
-    public class GetByIdOrderQuery : IRequest<OrderResponse>
+    public class GetByIdOrderQuery : IRequest<OrderResponse>, ISecuredRequest
     {
+        // Yetki: Order.Admin veya Order.Read claim'lerinden biri yeterli (global Admin her zaman geçer).
+        // Açık (explicit) implementasyon: public property olmaz, JSON gövdesine / Swagger'a girmez.
+        string[] ISecuredRequest.Roles => [OrderOperationClaims.Admin, OrderOperationClaims.Read];
+
         public Guid Id { get; set; }
 
         public class GetByIdOrderQueryHandler : IRequestHandler<GetByIdOrderQuery, OrderResponse>

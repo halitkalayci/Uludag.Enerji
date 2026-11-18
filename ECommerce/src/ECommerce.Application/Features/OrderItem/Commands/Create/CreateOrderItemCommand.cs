@@ -3,6 +3,7 @@ using ECommerce.Application.Features.OrderItem.Rules;
 using ECommerce.Application.Services.OrderService;
 using ECommerce.Application.Services.ProductService;
 using ECommerce.Application.Services.Repositories;
+using ECommerce.Application.Features.OrderItem.Constants;
 using Uludag.Core.Mediation;
 
 namespace ECommerce.Application.Features.OrderItem.Commands.Create
@@ -11,8 +12,12 @@ namespace ECommerce.Application.Features.OrderItem.Commands.Create
     // Sipariş ya da ürün bulunamazsa NotFoundException, kural ihlalinde BusinessException fırlar.
     // Fiyat istemciden alınmaz; ürünün güncel fiyatından hesaplanır (istemci fiyatı manipüle edemesin).
     // Kalemin adedi kadar ürün stoğundan düşülür; stok yetmezse kalem eklenmez.
-    public class CreateOrderItemCommand : IRequest
+    public class CreateOrderItemCommand : IRequest, ISecuredRequest
     {
+        // Yetki: OrderItem.Admin, OrderItem.Write veya OrderItem.Create claim'lerinden biri yeterli (global Admin her zaman geçer).
+        // Açık (explicit) implementasyon: public property olmaz, JSON gövdesine / Swagger'a girmez.
+        string[] ISecuredRequest.Roles => [OrderItemOperationClaims.Admin, OrderItemOperationClaims.Write, OrderItemOperationClaims.Create];
+
         public Guid OrderId { get; set; }
         public Guid ProductId { get; set; }
         public int Amount { get; set; } // adet

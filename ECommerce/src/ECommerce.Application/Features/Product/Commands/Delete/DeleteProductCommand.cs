@@ -1,12 +1,17 @@
 ﻿using ECommerce.Application.Features.Product.Rules;
 using ECommerce.Application.Services.Repositories;
+using ECommerce.Application.Features.Product.Constants;
 using Uludag.Core.Mediation;
 
 namespace ECommerce.Application.Features.Product.Commands.Delete
 {
     // Ürün bulunamazsa NotFoundException fırlar.
-    public class DeleteProductCommand : IRequest
+    public class DeleteProductCommand : IRequest, ISecuredRequest
     {
+        // Yetki: Product.Admin, Product.Write veya Product.Delete claim'lerinden biri yeterli (global Admin her zaman geçer).
+        // Açık (explicit) implementasyon: public property olmaz, JSON gövdesine / Swagger'a girmez.
+        string[] ISecuredRequest.Roles => [ProductOperationClaims.Admin, ProductOperationClaims.Write, ProductOperationClaims.Delete];
+
         public Guid Id { get; set; }
 
         public class DeleteProductCommandHandler : IRequestHandler<DeleteProductCommand>

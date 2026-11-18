@@ -3,6 +3,7 @@ using ECommerce.Application.Features.OrderItem.Rules;
 using ECommerce.Application.Services.OrderService;
 using ECommerce.Application.Services.ProductService;
 using ECommerce.Application.Services.Repositories;
+using ECommerce.Application.Features.OrderItem.Constants;
 using Uludag.Core.Mediation;
 
 namespace ECommerce.Application.Features.OrderItem.Commands.Update
@@ -11,8 +12,12 @@ namespace ECommerce.Application.Features.OrderItem.Commands.Update
     // Yalnızca adet değişir. Ürün değiştirmek için kalem silinip yenisi eklenmeli.
     // Birim fiyat, kalem eklendiği andaki fiyattır (ürün fiyatı sonradan değişse de sipariş etkilenmez).
     // Stok, adet farkı kadar düşülür (artışta) ya da iade edilir (azalışta).
-    public class UpdateOrderItemCommand : IRequest
+    public class UpdateOrderItemCommand : IRequest, ISecuredRequest
     {
+        // Yetki: OrderItem.Admin, OrderItem.Write veya OrderItem.Update claim'lerinden biri yeterli (global Admin her zaman geçer).
+        // Açık (explicit) implementasyon: public property olmaz, JSON gövdesine / Swagger'a girmez.
+        string[] ISecuredRequest.Roles => [OrderItemOperationClaims.Admin, OrderItemOperationClaims.Write, OrderItemOperationClaims.Update];
+
         public Guid Id { get; set; }
         public int Amount { get; set; } // adet
 

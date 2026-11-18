@@ -3,6 +3,7 @@ using ECommerce.Application.Features.Order.Rules;
 using ECommerce.Application.Features.OrderItem.Rules;
 using ECommerce.Application.Services.ProductService;
 using ECommerce.Application.Services.Repositories;
+using ECommerce.Application.Features.Order.Constants;
 using Uludag.Core.Mediation;
 
 namespace ECommerce.Application.Features.Order.Commands.Create
@@ -11,8 +12,12 @@ namespace ECommerce.Application.Features.Order.Commands.Create
     // Kalemlerdeki ürünlerden biri bulunamazsa NotFoundException, kural ihlalinde BusinessException fırlar.
     // OrderDate ve fiyatlar istemciden alınmaz, sunucu belirler.
     // Her kalemin adedi kadar ürün stoğundan düşülür; stok yetmezse sipariş oluşmaz.
-    public class CreateOrderCommand : IRequest
+    public class CreateOrderCommand : IRequest, ISecuredRequest
     {
+        // Yetki: Order.Admin, Order.Write veya Order.Create claim'lerinden biri yeterli (global Admin her zaman geçer).
+        // Açık (explicit) implementasyon: public property olmaz, JSON gövdesine / Swagger'a girmez.
+        string[] ISecuredRequest.Roles => [OrderOperationClaims.Admin, OrderOperationClaims.Write, OrderOperationClaims.Create];
+
         // Siparişin para birimi. Kalemlerdeki tüm ürünler bu para biriminde olmalı.
         public string Currency { get; set; } = "TRY";
         public List<CreateOrderItemDto> Items { get; set; } = new();

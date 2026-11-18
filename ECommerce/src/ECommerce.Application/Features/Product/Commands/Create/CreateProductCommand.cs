@@ -1,12 +1,17 @@
 ﻿using ECommerce.Application.Features.Product.Mappers;
 using ECommerce.Application.Features.Product.Rules;
 using ECommerce.Application.Services.Repositories;
+using ECommerce.Application.Features.Product.Constants;
 using Uludag.Core.Mediation;
 
 namespace ECommerce.Application.Features.Product.Commands.Create
 {
-    public class CreateProductCommand : IRequest // komut varolmadan (geriye değer döndürmeyen istek)
+    public class CreateProductCommand : IRequest, ISecuredRequest // komut varolmadan (geriye değer döndürmeyen istek)
     {
+        // Yetki: Product.Admin, Product.Write veya Product.Create claim'lerinden biri yeterli (global Admin her zaman geçer).
+        // Açık (explicit) implementasyon: public property olmaz, JSON gövdesine / Swagger'a girmez.
+        string[] ISecuredRequest.Roles => [ProductOperationClaims.Admin, ProductOperationClaims.Write, ProductOperationClaims.Create];
+
         // İki parçadan oluşur -> Komutun gövdesi, (Create işlemi yapılırken ne istiyosun?)
 
         public string Name { get; set; }

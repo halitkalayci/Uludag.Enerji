@@ -2,14 +2,19 @@ using ECommerce.Application.Features.OrderItem.Rules;
 using ECommerce.Application.Services.OrderService;
 using ECommerce.Application.Services.ProductService;
 using ECommerce.Application.Services.Repositories;
+using ECommerce.Application.Features.OrderItem.Constants;
 using Uludag.Core.Mediation;
 
 namespace ECommerce.Application.Features.OrderItem.Commands.Delete
 {
     // Kalem bulunamazsa NotFoundException fırlar.
     // Kalemin adedi kadar ürün stoğu iade edilir, tutarı sipariş toplamından düşülür.
-    public class DeleteOrderItemCommand : IRequest
+    public class DeleteOrderItemCommand : IRequest, ISecuredRequest
     {
+        // Yetki: OrderItem.Admin, OrderItem.Write veya OrderItem.Delete claim'lerinden biri yeterli (global Admin her zaman geçer).
+        // Açık (explicit) implementasyon: public property olmaz, JSON gövdesine / Swagger'a girmez.
+        string[] ISecuredRequest.Roles => [OrderItemOperationClaims.Admin, OrderItemOperationClaims.Write, OrderItemOperationClaims.Delete];
+
         public Guid Id { get; set; }
 
         public class DeleteOrderItemCommandHandler : IRequestHandler<DeleteOrderItemCommand>
