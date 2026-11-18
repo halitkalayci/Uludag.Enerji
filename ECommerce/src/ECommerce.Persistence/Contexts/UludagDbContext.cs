@@ -22,6 +22,8 @@ namespace ECommerce.Persistence.Contexts
         public DbSet<Order> Orders => Set<Order>();
         public DbSet<OrderItem> OrderItems => Set<OrderItem>();
         public DbSet<User> Users => Set<User>();
+        public DbSet<OperationClaim> OperationClaims => Set<OperationClaim>();
+        public DbSet<UserOperationClaim> UserOperationClaims => Set<UserOperationClaim>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
