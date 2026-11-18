@@ -7,5 +7,8 @@
     <Project Path="ECommerce/src/ECommerce.Persistence/ECommerce.Persistence.csproj" />
     <Project Path="ECommerce/src/ECommerce.WebAPI/ECommerce.WebAPI.csproj" />
   </Folder>
+  <Folder Name="/Solution Items/">
+    <File Path="docker-compose.yml" />
+  </Folder>
   <Project Path="Uludag.Core/Uludag.Core.csproj" />
 </Solution>
