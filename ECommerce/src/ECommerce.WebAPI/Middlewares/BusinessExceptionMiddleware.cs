@@ -8,6 +8,7 @@ namespace ECommerce.WebAPI.Middlewares
     // Handler'lar "bulunamadı" demek için false / null dönmez; kural ihlali istisna olarak buraya kadar çıkar.
     //   NotFoundException -> 404
     //   BusinessException -> 400
+    //   AuthenticationException -> 401
     // Diğer (beklenmeyen) istisnalara dokunulmaz -> 500.
     public class BusinessExceptionMiddleware
     {
@@ -31,6 +32,11 @@ namespace ECommerce.WebAPI.Middlewares
             catch (BusinessException exception)
             {
                 await WriteProblemAsync(context, StatusCodes.Status400BadRequest, "Business Rule Violation", exception.Message);
+            }
+            // AuthenticationBehavior: token yok / geçersiz / süresi dolmuş.
+            catch (AuthenticationException exception)
+            {
+                await WriteProblemAsync(context, StatusCodes.Status401Unauthorized, "Unauthorized", exception.Message);
             }
         }
 

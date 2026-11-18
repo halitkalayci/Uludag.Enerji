@@ -1,6 +1,8 @@
 using ECommerce.Application;
 using ECommerce.Persistence;
 using ECommerce.WebAPI.Middlewares;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Uludag.Core.Security.JWT;
 
 
 // Entrypoint -> Giriş noktası..
@@ -18,6 +20,25 @@ builder.Services.AddApplicationServices();
 // Bu application katmanının bağımlılıkları..
 // Başka bir katman adına karar vermemeli.
 builder.Services.AddPersistenceServices();
+
+// JWT
+// Ayarlar appsettings'teki "TokenOptions" bölümünden okunur. SecurityKey repoda değil;
+// Development'ta appsettings.Development.json, diğer ortamlarda TokenOptions__SecurityKey ortam değişkeni.
+TokenOptions tokenOptions = builder.Configuration.GetSection("TokenOptions").Get<TokenOptions>()
+    ?? throw new InvalidOperationException("appsettings'te 'TokenOptions' bölümü bulunamadı.");
+
+// Token üretimi -> Uludag.Core (ITokenHelper -> JwtHelper).
+builder.Services.AddJwtHelper(tokenOptions);
+
+// Token doğrulama -> gelen isteklerdeki "Authorization: Bearer <token>" başlığını kontrol eder.
+// Üretimle aynı TokenOptions + aynı SecurityKeyHelper kullanılır.
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        // AuthenticationBehavior ile aynı kurallar (Uludag.Core).
+        options.TokenValidationParameters = TokenValidationParametersHelper.Create(tokenOptions);
+    });
 
 // caching
 // Pipeline behavior örneği (sıra önemlidir, ilk eklenen en dışta çalışır):
@@ -48,6 +69,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+// Sıra önemli: önce kimlik (token geçerli mi, kim?), sonra yetki (bu kişi buna erişebilir mi?).
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

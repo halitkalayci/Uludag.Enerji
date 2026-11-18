@@ -21,7 +21,9 @@ namespace ECommerce.Application
         public static IServiceCollection AddApplicationServices(this IServiceCollection services)
         {
             services.AddMediator(typeof(CreateProductCommand).Assembly);
+            services.AddTransient(typeof(IPipelineBehavior<,>), typeof(AuthenticationBehavior<,>)); // kapatmak 1 satır
             services.AddTransient(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
+
 
             // Business servisleri -> feature'lar arası erişim repository ile değil, bu servislerle yapılır.
             // Scoped: kullandıkları repository/DbContext ile aynı ömür.
