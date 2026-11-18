@@ -1,3 +1,4 @@
+using ECommerce.Application.Features.OrderItem.Rules;
 using ECommerce.Application.Services.OrderService;
 using ECommerce.Application.Services.ProductService;
 using ECommerce.Application.Services.Repositories;
@@ -5,49 +6,44 @@ using Uludag.Core.Mediation;
 
 namespace ECommerce.Application.Features.OrderItem.Commands.Delete
 {
-    // Geriye bool döner: true -> silindi, false -> kalem bulunamadı.
-    // Kalemin adedi kadar ürün stoğu iade edilir.
-    public class DeleteOrderItemCommand : IRequest<bool>
+    // Kalem bulunamazsa NotFoundException fırlar.
+    // Kalemin adedi kadar ürün stoğu iade edilir, tutarı sipariş toplamından düşülür.
+    public class DeleteOrderItemCommand : IRequest
     {
         public Guid Id { get; set; }
 
-        public class DeleteOrderItemCommandHandler : IRequestHandler<DeleteOrderItemCommand, bool>
+        public class DeleteOrderItemCommandHandler : IRequestHandler<DeleteOrderItemCommand>
         {
             // Dependency Injection
             // Kendi entity'si -> repository. Başka entity'ler (Order, Product) -> servis.
             private readonly IOrderItemRepository orderItemRepository;
             private readonly IOrderService orderService;
             private readonly IProductService productService;
+            private readonly OrderItemBusinessRules orderItemBusinessRules;
             public DeleteOrderItemCommandHandler(
                 IOrderItemRepository orderItemRepository,
                 IOrderService orderService,
-                IProductService productService)
+                IProductService productService,
+                OrderItemBusinessRules orderItemBusinessRules)
             {
                 this.orderItemRepository = orderItemRepository;
                 this.orderService = orderService;
                 this.productService = productService;
+                this.orderItemBusinessRules = orderItemBusinessRules;
             }
 
-            public async Task<bool> Handle(DeleteOrderItemCommand request, CancellationToken cancellationToken)
+            public async Task Handle(DeleteOrderItemCommand request, CancellationToken cancellationToken)
             {
                 Domain.Entities.OrderItem? orderItem = await orderItemRepository.GetByIdAsync(request.Id, cancellationToken);
-                if (orderItem is null)
-                    return false;
-
-                Domain.Entities.Order? order = await orderService.GetByIdAsync(orderItem.OrderId, cancellationToken);
-                Domain.Entities.Product? product = await productService.GetByIdAsync(orderItem.ProductId, cancellationToken);
+                orderItemBusinessRules.OrderItemShouldExistWhenSelected(orderItem);
 
                 await orderItemRepository.DeleteAsync(orderItem, cancellationToken);
 
-                // Stoğu iade et (ürün bu arada silinmişse iade edilecek stok yoktur).
-                if (product is not null)
-                    await productService.IncreaseStockAsync(product, orderItem.Amount, cancellationToken);
+                // Stoğu iade et (ürün bu arada silinmişse servis hiçbir şey yapmaz).
+                await productService.IncreaseStockIfProductExistsAsync(orderItem.ProductId, orderItem.Amount, cancellationToken);
 
-                // Sipariş toplamından kalemin tutarını düş.
-                if (order is not null)
-                    await orderService.ChangeTotalPriceAsync(order, -orderItem.TotalPrice.Amount, cancellationToken);
-
-                return true;
+                // Sipariş toplamından kalemin tutarını düş (sipariş yoksa servis hiçbir şey yapmaz).
+                await orderService.ChangeTotalPriceIfOrderExistsAsync(orderItem.OrderId, -orderItem.TotalPrice.Amount, cancellationToken);
             }
         }
     }

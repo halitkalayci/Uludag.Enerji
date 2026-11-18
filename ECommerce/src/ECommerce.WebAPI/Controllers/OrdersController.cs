@@ -15,9 +15,9 @@ namespace ECommerce.WebAPI.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateOrderCommand createOrderCommand, CancellationToken cancellationToken)
         {
-            // false -> kalemlerdeki ürünlerden biri bulunamadı.
-            var created = await mediator.Send(createOrderCommand, cancellationToken);
-            return created ? Ok() : NotFound();
+            // Bulunamayan kayıt -> 404, kural ihlali -> 400 (BusinessExceptionMiddleware).
+            await mediator.Send(createOrderCommand, cancellationToken);
+            return Ok();
         }
 
         [HttpGet]
@@ -30,8 +30,9 @@ namespace ECommerce.WebAPI.Controllers
         [HttpGet("{id:guid}")]
         public async Task<IActionResult> GetById([FromRoute] Guid id, CancellationToken cancellationToken)
         {
+            // Kayıt yoksa handler NotFoundException fırlatır -> 404.
             var order = await mediator.Send(new GetByIdOrderQuery { Id = id }, cancellationToken);
-            return order is null ? NotFound() : Ok(order);
+            return Ok(order);
         }
 
         [HttpPut("{id:guid}")]
@@ -39,15 +40,15 @@ namespace ECommerce.WebAPI.Controllers
         {
             // Id route'tan gelir; gövdedeki Id'ye güvenmiyoruz.
             updateOrderCommand.Id = id;
-            var updated = await mediator.Send(updateOrderCommand, cancellationToken);
-            return updated ? NoContent() : NotFound();
+            await mediator.Send(updateOrderCommand, cancellationToken);
+            return NoContent();
         }
 
         [HttpDelete("{id:guid}")]
         public async Task<IActionResult> Delete([FromRoute] Guid id, CancellationToken cancellationToken)
         {
-            var deleted = await mediator.Send(new DeleteOrderCommand { Id = id }, cancellationToken);
-            return deleted ? NoContent() : NotFound();
+            await mediator.Send(new DeleteOrderCommand { Id = id }, cancellationToken);
+            return NoContent();
         }
     }
 }

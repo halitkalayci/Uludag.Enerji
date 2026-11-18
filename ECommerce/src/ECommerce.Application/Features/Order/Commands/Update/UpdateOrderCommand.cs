@@ -1,36 +1,36 @@
+using ECommerce.Application.Features.Order.Rules;
 using ECommerce.Application.Services.Repositories;
 using Uludag.Core.Mediation;
 
 namespace ECommerce.Application.Features.Order.Commands.Update
 {
-    // Geriye bool döner: true -> güncellendi, false -> sipariş bulunamadı.
+    // Sipariş bulunamazsa NotFoundException fırlar.
     // TotalPrice burada güncellenmez; kalemlerden hesaplanan bir değerdir (OrderItem komutları yönetir).
-    public class UpdateOrderCommand : IRequest<bool>
+    public class UpdateOrderCommand : IRequest
     {
         public Guid Id { get; set; }
         public DateTime OrderDate { get; set; }
 
-        public class UpdateOrderCommandHandler : IRequestHandler<UpdateOrderCommand, bool>
+        public class UpdateOrderCommandHandler : IRequestHandler<UpdateOrderCommand>
         {
             // Dependency Injection
             private readonly IOrderRepository orderRepository;
-            public UpdateOrderCommandHandler(IOrderRepository orderRepository)
+            private readonly OrderBusinessRules orderBusinessRules;
+            public UpdateOrderCommandHandler(IOrderRepository orderRepository, OrderBusinessRules orderBusinessRules)
             {
                 this.orderRepository = orderRepository;
+                this.orderBusinessRules = orderBusinessRules;
             }
 
-            public async Task<bool> Handle(UpdateOrderCommand request, CancellationToken cancellationToken)
+            public async Task Handle(UpdateOrderCommand request, CancellationToken cancellationToken)
             {
                 Domain.Entities.Order? order = await orderRepository.GetByIdAsync(request.Id, cancellationToken);
-
-                if (order is null)
-                    return false;
+                orderBusinessRules.OrderShouldExistWhenSelected(order);
 
                 // Mapping
                 order.OrderDate = request.OrderDate;
 
                 await orderRepository.UpdateAsync(order, cancellationToken);
-                return true;
             }
         }
     }

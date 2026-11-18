@@ -1,34 +1,37 @@
+using ECommerce.Application.Features.Product.Rules;
 using ECommerce.Application.Services.Repositories;
 
 namespace ECommerce.Application.Services.ProductService
 {
-    // IProductService'in implementasyonu. Yalnızca kendi repository'sini (IProductRepository) kullanır.
+    // IProductService'in implementasyonu. Yalnızca kendi repository'sini (IProductRepository)
+    // ve kendi feature'ının kurallarını (ProductBusinessRules) kullanır.
     public class ProductManager : IProductService
     {
         // Dependency Injection
         private readonly IProductRepository productRepository;
-        public ProductManager(IProductRepository productRepository)
+        private readonly ProductBusinessRules productBusinessRules;
+        public ProductManager(IProductRepository productRepository, ProductBusinessRules productBusinessRules)
         {
             this.productRepository = productRepository;
+            this.productBusinessRules = productBusinessRules;
         }
 
-        public async Task<Domain.Entities.Product?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+        public async Task<Domain.Entities.Product> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
-            return await productRepository.GetByIdAsync(id, cancellationToken);
+            Domain.Entities.Product? product = await productRepository.GetByIdAsync(id, cancellationToken);
+            productBusinessRules.ProductShouldExistWhenSelected(product);
+            return product;
         }
 
-        public bool HasEnoughStock(Domain.Entities.Product product, int amount)
+        public void StockShouldBeEnough(Domain.Entities.Product product, int amount)
         {
-            return product.Stock >= amount;
+            productBusinessRules.StockShouldBeEnough(product, amount);
         }
 
         public async Task DecreaseStockAsync(Domain.Entities.Product product, int amount, CancellationToken cancellationToken = default)
         {
-            if (amount <= 0)
-                throw new ArgumentException("Amount must be greater than zero.");
-
-            if (!HasEnoughStock(product, amount))
-                throw new ArgumentException($"Insufficient stock for product {product.Id}.");
+            productBusinessRules.StockChangeAmountShouldBeGreaterThanZero(amount);
+            productBusinessRules.StockShouldBeEnough(product, amount);
 
             product.Stock -= amount;
             await productRepository.UpdateAsync(product, cancellationToken);
@@ -36,11 +39,28 @@ namespace ECommerce.Application.Services.ProductService
 
         public async Task IncreaseStockAsync(Domain.Entities.Product product, int amount, CancellationToken cancellationToken = default)
         {
-            if (amount <= 0)
-                throw new ArgumentException("Amount must be greater than zero.");
+            productBusinessRules.StockChangeAmountShouldBeGreaterThanZero(amount);
 
             product.Stock += amount;
             await productRepository.UpdateAsync(product, cancellationToken);
+        }
+
+        public async Task ChangeStockByAmountDifferenceAsync(Domain.Entities.Product product, int amountDifference, CancellationToken cancellationToken = default)
+        {
+            // Adet azaldıysa (fark <= 0) stok kuralı her zaman sağlanır; arttıysa fark kadar stok gerekir.
+            productBusinessRules.StockShouldBeEnough(product, amountDifference);
+
+            product.Stock -= amountDifference;
+            await productRepository.UpdateAsync(product, cancellationToken);
+        }
+
+        public async Task IncreaseStockIfProductExistsAsync(Guid productId, int amount, CancellationToken cancellationToken = default)
+        {
+            Domain.Entities.Product? product = await productRepository.GetByIdAsync(productId, cancellationToken);
+            if (product is null)
+                return;
+
+            await IncreaseStockAsync(product, amount, cancellationToken);
         }
     }
 }

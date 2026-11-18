@@ -32,8 +32,6 @@ namespace ECommerce.Application.Features.Product.Commands.Create
 
             public async Task Handle(CreateProductCommand request, CancellationToken cancellationToken)
             {
-                // Mapping
-                // En üstte. Bir kural eziliyorsa zaten işlem yapılmayacaktır.
                 await productBusinessRules.ProductNameCannotExist(request.Name);
 
                 Domain.Entities.Product product = new()

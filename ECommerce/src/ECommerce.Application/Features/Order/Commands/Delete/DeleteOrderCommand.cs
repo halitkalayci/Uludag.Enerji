@@ -1,33 +1,37 @@
+using ECommerce.Application.Features.Order.Rules;
 using ECommerce.Application.Services.ProductService;
 using ECommerce.Application.Services.Repositories;
 using Uludag.Core.Mediation;
 
 namespace ECommerce.Application.Features.Order.Commands.Delete
 {
-    // Geriye bool döner: true -> silindi, false -> sipariş bulunamadı.
+    // Sipariş bulunamazsa NotFoundException fırlar.
     // Sipariş silinince kalemleri de silinir ve her kalemin adedi kadar ürün stoğu iade edilir.
-    public class DeleteOrderCommand : IRequest<bool>
+    public class DeleteOrderCommand : IRequest
     {
         public Guid Id { get; set; }
 
-        public class DeleteOrderCommandHandler : IRequestHandler<DeleteOrderCommand, bool>
+        public class DeleteOrderCommandHandler : IRequestHandler<DeleteOrderCommand>
         {
             // Dependency Injection
             // Kendi entity'si -> repository. Başka entity (Product) -> servis.
             private readonly IOrderRepository orderRepository;
             private readonly IProductService productService;
-            public DeleteOrderCommandHandler(IOrderRepository orderRepository, IProductService productService)
+            private readonly OrderBusinessRules orderBusinessRules;
+            public DeleteOrderCommandHandler(
+                IOrderRepository orderRepository,
+                IProductService productService,
+                OrderBusinessRules orderBusinessRules)
             {
                 this.orderRepository = orderRepository;
                 this.productService = productService;
+                this.orderBusinessRules = orderBusinessRules;
             }
 
-            public async Task<bool> Handle(DeleteOrderCommand request, CancellationToken cancellationToken)
+            public async Task Handle(DeleteOrderCommand request, CancellationToken cancellationToken)
             {
                 Domain.Entities.Order? order = await orderRepository.GetByIdWithItemsAsync(request.Id, cancellationToken);
-
-                if (order is null)
-                    return false;
+                orderBusinessRules.OrderShouldExistWhenSelected(order);
 
                 // Silmeden önce iade edilecek adetleri ürün bazında topla
                 // (silme sonrası Items koleksiyonu EF tarafından boşaltılır).
@@ -37,15 +41,9 @@ namespace ECommerce.Application.Features.Order.Commands.Delete
 
                 await orderRepository.DeleteAsync(order, cancellationToken);
 
-                // Stoğu iade et (ürün bu arada silinmişse iade edilecek stok yoktur).
+                // Stoğu iade et (ürün bu arada silinmişse servis hiçbir şey yapmaz).
                 foreach ((Guid productId, int amount) in returnedAmounts)
-                {
-                    Domain.Entities.Product? product = await productService.GetByIdAsync(productId, cancellationToken);
-                    if (product is not null)
-                        await productService.IncreaseStockAsync(product, amount, cancellationToken);
-                }
-
-                return true;
+                    await productService.IncreaseStockIfProductExistsAsync(productId, amount, cancellationToken);
             }
         }
     }

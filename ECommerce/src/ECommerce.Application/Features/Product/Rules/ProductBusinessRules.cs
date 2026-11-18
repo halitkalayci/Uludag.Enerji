@@ -1,10 +1,6 @@
-﻿using ECommerce.Application.Services.Repositories;
-using ECommerce.Domain.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using ECommerce.Application.Exceptions;
+using ECommerce.Application.Services.Repositories;
+using System.Diagnostics.CodeAnalysis;
 
 namespace ECommerce.Application.Features.Product.Rules
 {
@@ -16,6 +12,7 @@ namespace ECommerce.Application.Features.Product.Rules
             this.productRepository = productRepository;
         }
         // ürün nesnesi ile ilgili tüm iş kuralları burada yazılır.
+        // Diğer feature'lar (Order, OrderItem) bu kurallara doğrudan değil, IProductService üzerinden ulaşır.
 
         public async Task ProductNameCannotExist(string name)
         {
@@ -26,7 +23,29 @@ namespace ECommerce.Application.Features.Product.Rules
             // Ürün ismi zaten var mı? -> Sisteme bakmam gerekiyor? DB'de daha önce "ürün 1" ismi var mı
             Domain.Entities.Product? productWithSameName = await productRepository.GetByNameAsync(name);
             if(productWithSameName != null)
-                throw new Exception("Product name already exists.");
+                throw new BusinessException("Product name already exists.");
+        }
+
+        // [NotNull]: Metot hata fırlatmadan dönerse derleyici product'ın artık null olmadığını bilir.
+        // Böylece handler'da kuraldan sonra "product!" yazmaya gerek kalmaz.
+        public void ProductShouldExistWhenSelected([NotNull] Domain.Entities.Product? product)
+        {
+            if (product is null)
+                throw new NotFoundException("Product not found.");
+        }
+
+        // Stoğa eklenen / stoktan düşülen adet pozitif olmalı.
+        public void StockChangeAmountShouldBeGreaterThanZero(int amount)
+        {
+            if (amount <= 0)
+                throw new BusinessException("Amount must be greater than zero.");
+        }
+
+        // Ürünün stoğu istenen adedi karşılamalı. (İstenen adet 0 ya da negatifse kural her zaman sağlanır.)
+        public void StockShouldBeEnough(Domain.Entities.Product product, int requestedAmount)
+        {
+            if (product.Stock < requestedAmount)
+                throw new BusinessException($"Insufficient stock for product {product.Id}.");
         }
     }
 }

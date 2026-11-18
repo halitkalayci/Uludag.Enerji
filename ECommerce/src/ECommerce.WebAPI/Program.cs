@@ -1,5 +1,6 @@
 using ECommerce.Application;
 using ECommerce.Persistence;
+using ECommerce.WebAPI.Middlewares;
 
 
 // Entrypoint -> Giriş noktası..
@@ -26,6 +27,10 @@ builder.Services.AddPersistenceServices();
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
+
+// Rules sınıflarının fırlattığı BusinessException / NotFoundException -> 400 / 404.
+// Pipeline'ın en başında: sonraki tüm middleware'ler ve controller'lar bunun içinde çalışır.
+app.UseMiddleware<BusinessExceptionMiddleware>();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

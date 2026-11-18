@@ -1,14 +1,15 @@
-﻿using ECommerce.Application.Services.Repositories;
+﻿using ECommerce.Application.Features.Product.Rules;
+using ECommerce.Application.Services.Repositories;
 using Uludag.Core.Mediation;
 
 namespace ECommerce.Application.Features.Product.Commands.Delete
 {
-    // Geriye bool döner: true -> silindi, false -> ürün bulunamadı.
-    public class DeleteProductCommand : IRequest<bool>
+    // Ürün bulunamazsa NotFoundException fırlar.
+    public class DeleteProductCommand : IRequest
     {
         public Guid Id { get; set; }
 
-        public class DeleteProductCommandHandler : IRequestHandler<DeleteProductCommand, bool>
+        public class DeleteProductCommandHandler : IRequestHandler<DeleteProductCommand>
         {
             // Dependency Injection
 
@@ -19,20 +20,19 @@ namespace ECommerce.Application.Features.Product.Commands.Delete
             /// Developer belirler X
             /// Developerı doğruyu kullanmaya zorunlu tutmam. ✔️
             private readonly IProductRepository productRepository;
-            public DeleteProductCommandHandler(IProductRepository productRepository)
+            private readonly ProductBusinessRules productBusinessRules;
+            public DeleteProductCommandHandler(IProductRepository productRepository, ProductBusinessRules productBusinessRules)
             {
                 this.productRepository = productRepository;
+                this.productBusinessRules = productBusinessRules;
             }
 
-            public async Task<bool> Handle(DeleteProductCommand request, CancellationToken cancellationToken)
+            public async Task Handle(DeleteProductCommand request, CancellationToken cancellationToken)
             {
                 Domain.Entities.Product? product = await productRepository.GetByIdAsync(request.Id, cancellationToken);
-
-                if (product is null)
-                    return false;
+                productBusinessRules.ProductShouldExistWhenSelected(product);
 
                 await productRepository.DeleteAsync(product, cancellationToken);
-                return true;
             }
         }
     }

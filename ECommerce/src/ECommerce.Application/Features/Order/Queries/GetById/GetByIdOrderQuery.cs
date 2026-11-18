@@ -1,28 +1,29 @@
+using ECommerce.Application.Features.Order.Rules;
 using ECommerce.Application.Services.Repositories;
 using Uludag.Core.Mediation;
 
 namespace ECommerce.Application.Features.Order.Queries.GetById
 {
-    // Sorgu -> geriye değer döndüren istek. Sipariş yoksa null döner.
-    public class GetByIdOrderQuery : IRequest<OrderResponse?>
+    // Sorgu -> geriye değer döndüren istek. Sipariş yoksa NotFoundException fırlar (null dönmez).
+    public class GetByIdOrderQuery : IRequest<OrderResponse>
     {
         public Guid Id { get; set; }
 
-        public class GetByIdOrderQueryHandler : IRequestHandler<GetByIdOrderQuery, OrderResponse?>
+        public class GetByIdOrderQueryHandler : IRequestHandler<GetByIdOrderQuery, OrderResponse>
         {
             // Dependency Injection
             private readonly IOrderRepository orderRepository;
-            public GetByIdOrderQueryHandler(IOrderRepository orderRepository)
+            private readonly OrderBusinessRules orderBusinessRules;
+            public GetByIdOrderQueryHandler(IOrderRepository orderRepository, OrderBusinessRules orderBusinessRules)
             {
                 this.orderRepository = orderRepository;
+                this.orderBusinessRules = orderBusinessRules;
             }
 
-            public async Task<OrderResponse?> Handle(GetByIdOrderQuery request, CancellationToken cancellationToken)
+            public async Task<OrderResponse> Handle(GetByIdOrderQuery request, CancellationToken cancellationToken)
             {
                 Domain.Entities.Order? order = await orderRepository.GetByIdAsync(request.Id, cancellationToken);
-
-                if (order is null)
-                    return null;
+                orderBusinessRules.OrderShouldExistWhenSelected(order);
 
                 // Mapping
                 return new OrderResponse

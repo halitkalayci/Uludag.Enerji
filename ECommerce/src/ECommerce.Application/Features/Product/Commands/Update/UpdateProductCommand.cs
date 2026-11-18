@@ -1,10 +1,11 @@
+using ECommerce.Application.Features.Product.Rules;
 using ECommerce.Application.Services.Repositories;
 using Uludag.Core.Mediation;
 
 namespace ECommerce.Application.Features.Product.Commands.Update
 {
-    // Geriye bool döner: true -> güncellendi, false -> ürün bulunamadı.
-    public class UpdateProductCommand : IRequest<bool>
+    // Ürün bulunamazsa NotFoundException fırlar.
+    public class UpdateProductCommand : IRequest
     {
         public Guid Id { get; set; }
         public string Name { get; set; }
@@ -12,21 +13,21 @@ namespace ECommerce.Application.Features.Product.Commands.Update
         public string Currency { get; set; }
         public int Stock { get; set; }
 
-        public class UpdateProductCommandHandler : IRequestHandler<UpdateProductCommand, bool>
+        public class UpdateProductCommandHandler : IRequestHandler<UpdateProductCommand>
         {
             // Dependency Injection
             private readonly IProductRepository productRepository;
-            public UpdateProductCommandHandler(IProductRepository productRepository)
+            private readonly ProductBusinessRules productBusinessRules;
+            public UpdateProductCommandHandler(IProductRepository productRepository, ProductBusinessRules productBusinessRules)
             {
                 this.productRepository = productRepository;
+                this.productBusinessRules = productBusinessRules;
             }
 
-            public async Task<bool> Handle(UpdateProductCommand request, CancellationToken cancellationToken)
+            public async Task Handle(UpdateProductCommand request, CancellationToken cancellationToken)
             {
                 Domain.Entities.Product? product = await productRepository.GetByIdAsync(request.Id, cancellationToken);
-
-                if (product is null)
-                    return false;
+                productBusinessRules.ProductShouldExistWhenSelected(product);
 
                 // Mapping
                 product.Name = request.Name;
@@ -34,7 +35,6 @@ namespace ECommerce.Application.Features.Product.Commands.Update
                 product.Stock = request.Stock;
 
                 await productRepository.UpdateAsync(product, cancellationToken);
-                return true;
             }
         }
     }

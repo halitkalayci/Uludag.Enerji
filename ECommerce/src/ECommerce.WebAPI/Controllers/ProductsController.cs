@@ -39,8 +39,9 @@ namespace ECommerce.WebAPI.Controllers
         [HttpGet("{id:guid}")]
         public async Task<IActionResult> GetById([FromRoute] Guid id, CancellationToken cancellationToken)
         {
+            // Kayıt yoksa handler NotFoundException fırlatır -> 404.
             var product = await mediator.Send(new GetByIdProductQuery { Id = id }, cancellationToken);
-            return product is null ? NotFound() : Ok(product);
+            return Ok(product);
         }
 
         [HttpPut("{id:guid}")]
@@ -48,15 +49,15 @@ namespace ECommerce.WebAPI.Controllers
         {
             // Id route'tan gelir; gövdedeki Id'ye güvenmiyoruz.
             updateProductCommand.Id = id;
-            var updated = await mediator.Send(updateProductCommand, cancellationToken);
-            return updated ? NoContent() : NotFound();
+            await mediator.Send(updateProductCommand, cancellationToken);
+            return NoContent();
         }
 
         [HttpDelete("{id:guid}")]
         public async Task<IActionResult> Delete([FromRoute] Guid id, CancellationToken cancellationToken)
         {
-            var deleted = await mediator.Send(new DeleteProductCommand { Id = id }, cancellationToken);
-            return deleted ? NoContent() : NotFound();
+            await mediator.Send(new DeleteProductCommand { Id = id }, cancellationToken);
+            return NoContent();
         }
     }
 }

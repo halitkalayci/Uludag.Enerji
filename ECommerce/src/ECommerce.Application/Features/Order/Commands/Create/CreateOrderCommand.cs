@@ -1,3 +1,5 @@
+using ECommerce.Application.Features.Order.Rules;
+using ECommerce.Application.Features.OrderItem.Rules;
 using ECommerce.Application.Services.ProductService;
 using ECommerce.Application.Services.Repositories;
 using Uludag.Core.Mediation;
@@ -5,10 +7,10 @@ using Uludag.Core.Mediation;
 namespace ECommerce.Application.Features.Order.Commands.Create
 {
     // Siparişi kalemleriyle birlikte tek seferde (tek SaveChanges) oluşturur.
-    // Geriye bool döner: true -> oluşturuldu, false -> kalemlerdeki ürünlerden biri bulunamadı.
+    // Kalemlerdeki ürünlerden biri bulunamazsa NotFoundException, kural ihlalinde BusinessException fırlar.
     // OrderDate ve fiyatlar istemciden alınmaz, sunucu belirler.
     // Her kalemin adedi kadar ürün stoğundan düşülür; stok yetmezse sipariş oluşmaz.
-    public class CreateOrderCommand : IRequest<bool>
+    public class CreateOrderCommand : IRequest
     {
         // Siparişin para birimi. Kalemlerdeki tüm ürünler bu para biriminde olmalı.
         public string Currency { get; set; } = "TRY";
@@ -21,66 +23,64 @@ namespace ECommerce.Application.Features.Order.Commands.Create
             public int Amount { get; set; } // adet
         }
 
-        public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, bool>
+        public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand>
         {
             // Dependency Injection
             // Kendi entity'si -> repository. Başka entity (Product) -> servis.
             // OrderItem için ayrı repository gerekmez: kalemler Order aggregate'inin parçası olarak kaydedilir.
+            // Kalemleri de bu komut oluşturduğu için OrderItem kuralları da burada geçerlidir.
             private readonly IOrderRepository orderRepository;
             private readonly IProductService productService;
-            public CreateOrderCommandHandler(IOrderRepository orderRepository, IProductService productService)
+            private readonly OrderBusinessRules orderBusinessRules;
+            private readonly OrderItemBusinessRules orderItemBusinessRules;
+            public CreateOrderCommandHandler(
+                IOrderRepository orderRepository,
+                IProductService productService,
+                OrderBusinessRules orderBusinessRules,
+                OrderItemBusinessRules orderItemBusinessRules)
             {
                 this.orderRepository = orderRepository;
                 this.productService = productService;
+                this.orderBusinessRules = orderBusinessRules;
+                this.orderItemBusinessRules = orderItemBusinessRules;
             }
 
-            public async Task<bool> Handle(CreateOrderCommand request, CancellationToken cancellationToken)
+            public async Task Handle(CreateOrderCommand request, CancellationToken cancellationToken)
             {
-                if (request.Items is null || request.Items.Count == 0)
-                    throw new ArgumentException("Order must contain at least one item.");
+                // 1) Kurallar: hiçbir şeye dokunmadan önce tüm kalemleri kontrol et.
+                // En üstte. Bir kural eziliyorsa zaten işlem yapılmayacaktır.
+                orderBusinessRules.OrderShouldHaveAtLeastOneItem(request.Items);
 
+                foreach (CreateOrderItemDto item in request.Items)
+                    orderItemBusinessRules.AmountShouldBeGreaterThanZero(item.Amount);
+
+                // Aynı ürün birden fazla satırda gelebilir; stok kontrolü ürün bazında toplam adetle yapılır.
+                Dictionary<Guid, int> requestedAmounts = request.Items
+                    .GroupBy(i => i.ProductId)
+                    .ToDictionary(g => g.Key, g => g.Sum(i => i.Amount));
+
+                Dictionary<Guid, Domain.Entities.Product> products = new();
+                foreach ((Guid productId, int amount) in requestedAmounts)
+                {
+                    // Ürün yoksa servis NotFoundException fırlatır.
+                    Domain.Entities.Product product = await productService.GetByIdAsync(productId, cancellationToken);
+
+                    orderItemBusinessRules.ProductCurrencyShouldMatchOrderCurrency(product, request.Currency);
+                    productService.StockShouldBeEnough(product, amount);
+
+                    products[productId] = product;
+                }
+
+                // 2) Stokları düş (kurallar geçtiği için burada yetersiz stok hatası beklenmez).
+                foreach ((Guid productId, int amount) in requestedAmounts)
+                    await productService.DecreaseStockAsync(products[productId], amount, cancellationToken);
+
+                // 3) Siparişi kalemleriyle oluştur.
                 Domain.Entities.Order order = new()
                 {
                     OrderDate = DateTime.UtcNow
                 };
 
-                // 1) Doğrulama: hiçbir şeye dokunmadan önce tüm kalemleri kontrol et.
-                // Aynı ürün birden fazla satırda gelebilir; stok kontrolü ürün bazında toplam adetle yapılır.
-                Dictionary<Guid, Domain.Entities.Product> products = new();
-                Dictionary<Guid, int> requestedAmounts = new();
-                foreach (CreateOrderItemDto item in request.Items)
-                {
-                    if (item.Amount <= 0)
-                        throw new ArgumentException("Amount must be greater than zero.");
-
-                    if (!products.ContainsKey(item.ProductId))
-                    {
-                        Domain.Entities.Product? product = await productService.GetByIdAsync(item.ProductId, cancellationToken);
-                        if (product is null)
-                            return false;
-
-                        if (product.Price.Currency != request.Currency)
-                            throw new ArgumentException("Product currency does not match the order currency.");
-
-                        products[item.ProductId] = product;
-                        requestedAmounts[item.ProductId] = 0;
-                    }
-
-                    requestedAmounts[item.ProductId] += item.Amount;
-                }
-
-                foreach ((Guid productId, int amount) in requestedAmounts)
-                {
-                    if (!productService.HasEnoughStock(products[productId], amount))
-                        throw new ArgumentException($"Insufficient stock for product {productId}.");
-                }
-
-                // 2) Stokları düş (doğrulama geçtiği için burada yetersiz stok hatası beklenmez).
-                foreach ((Guid productId, int amount) in requestedAmounts)
-                    await productService.DecreaseStockAsync(products[productId], amount, cancellationToken);
-
-                // 3) Siparişi kalemleriyle oluştur.
-                decimal totalPrice = 0;
                 foreach (CreateOrderItemDto item in request.Items)
                 {
                     Domain.Entities.Product product = products[item.ProductId];
@@ -94,14 +94,12 @@ namespace ECommerce.Application.Features.Order.Commands.Create
                     };
 
                     order.Items.Add(orderItem); // OrderId, EF tarafından navigation üzerinden atanır.
-                    totalPrice += orderItem.TotalPrice.Amount;
                 }
 
-                order.TotalPrice = new Domain.ValueObjects.Money(totalPrice, request.Currency);
+                order.TotalPrice = new Domain.ValueObjects.Money(order.Items.Sum(i => i.TotalPrice.Amount), request.Currency);
 
                 // Sipariş + tüm kalemleri tek SaveChanges ile kaydedilir (ya hepsi ya hiçbiri).
                 await orderRepository.AddAsync(order, cancellationToken);
-                return true;
             }
         }
     }
