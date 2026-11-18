@@ -13,5 +13,9 @@ namespace ECommerce.Domain.Entities
 
         public byte[] PasswordHash { get; set; } // Bcrypt vs. Argon2 -> Saltı kendisi hallediyordu.
         public byte[] PasswordSalt { get; set; } // Gerek kalmayacaktı.
+
+        // Navigation Properties
+        // Kullanıcının yetkileri (User <-> OperationClaim çoka-çok, ara tablo: UserOperationClaim).
+        public virtual ICollection<UserOperationClaim> UserOperationClaims { get; set; } = new List<UserOperationClaim>();
     }
 }
