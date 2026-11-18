@@ -17,7 +17,17 @@ namespace ECommerce.WebAPI.Controllers
         {
             // Bulunamayan kayıt -> 404, kural ihlali -> 400 (BusinessExceptionMiddleware).
             await mediator.Send(createOrderCommand, cancellationToken);
-            return Ok();
+            return Ok(); // JSON body dönmesi BestPractice
+        }
+
+
+        [HttpPut("{id:guid}")]
+        public async Task<IActionResult> Update([FromRoute] Guid id, [FromBody] UpdateOrderCommand updateOrderCommand, CancellationToken cancellationToken)
+        {
+            // Id route'tan gelir; gövdedeki Id'ye güvenmiyoruz.
+            updateOrderCommand.Id = id;
+            await mediator.Send(updateOrderCommand, cancellationToken);
+            return NoContent();
         }
 
         [HttpGet]
@@ -35,14 +45,6 @@ namespace ECommerce.WebAPI.Controllers
             return Ok(order);
         }
 
-        [HttpPut("{id:guid}")]
-        public async Task<IActionResult> Update([FromRoute] Guid id, [FromBody] UpdateOrderCommand updateOrderCommand, CancellationToken cancellationToken)
-        {
-            // Id route'tan gelir; gövdedeki Id'ye güvenmiyoruz.
-            updateOrderCommand.Id = id;
-            await mediator.Send(updateOrderCommand, cancellationToken);
-            return NoContent();
-        }
 
         [HttpDelete("{id:guid}")]
         public async Task<IActionResult> Delete([FromRoute] Guid id, CancellationToken cancellationToken)

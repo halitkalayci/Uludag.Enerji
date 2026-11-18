@@ -1,4 +1,5 @@
-﻿using ECommerce.Application.Features.Product.Rules;
+﻿using ECommerce.Application.Features.Product.Mappers;
+using ECommerce.Application.Features.Product.Rules;
 using ECommerce.Application.Services.Repositories;
 using Uludag.Core.Mediation;
 
@@ -30,17 +31,20 @@ namespace ECommerce.Application.Features.Product.Commands.Create
                 this.productBusinessRules = productBusinessRules;
             }
 
+            // Bir developerın ekranında en çok olacak nokta.
             public async Task Handle(CreateProductCommand request, CancellationToken cancellationToken)
             {
+                // Orchestrator gibi davranır.
+                // Doğru sırayla, doğru kişileri çağır.
+                // İş kuralı
                 await productBusinessRules.ProductNameCannotExist(request.Name);
 
-                Domain.Entities.Product product = new()
-                {
-                    Name = request.Name,
-                    Price = new Domain.ValueObjects.Money(request.Amount, request.Currency),
-                    Stock = request.Stock
-                };
+                // İşi kendisi yapıyor.
+                // Mapper -> Gibi davranmadı
+                // Mapper'ım olsa, onu çağırsam.
+                var product = ProductMapper.MapCreateCommandToProduct(request);
 
+                // Veritabanı
                 await productRepository.AddAsync(product, cancellationToken);
             } 
         }
