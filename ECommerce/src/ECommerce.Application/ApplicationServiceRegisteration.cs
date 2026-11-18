@@ -22,6 +22,8 @@ namespace ECommerce.Application
         {
             services.AddMediator(typeof(CreateProductCommand).Assembly);
             services.AddTransient(typeof(IPipelineBehavior<,>), typeof(AuthenticationBehavior<,>)); // kapatmak 1 satır
+            // Sıra önemli: önce kimlik (Authentication), sonra yetki (Authorization).
+            services.AddTransient(typeof(IPipelineBehavior<,>), typeof(AuthorizationBehavior<,>));
             services.AddTransient(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
 
 

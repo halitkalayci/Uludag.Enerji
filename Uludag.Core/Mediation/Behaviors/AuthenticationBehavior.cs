@@ -15,8 +15,6 @@ namespace Uludag.Core.Mediation.Behaviors
     public class AuthenticationBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
         where TRequest : notnull
     {
-        private const string BearerPrefix = "Bearer ";
-
         private readonly IHttpContextAccessor httpContextAccessor;
         private readonly ITokenHelper tokenHelper;
         public AuthenticationBehavior(IHttpContextAccessor httpContextAccessor, ITokenHelper tokenHelper)
@@ -34,7 +32,7 @@ namespace Uludag.Core.Mediation.Behaviors
             if (request is IAllowAnonymousRequest)
                 return await next();
 
-            string? token = GetBearerToken();
+            string? token = httpContextAccessor.HttpContext.GetBearerToken();
             if (token is null)
                 throw new AuthenticationException("Bu işlem için giriş yapılmalıdır.");
 
@@ -42,18 +40,6 @@ namespace Uludag.Core.Mediation.Behaviors
                 throw new AuthenticationException("Geçersiz veya süresi dolmuş token.");
 
             return await next();
-        }
-
-        // "Authorization: Bearer <token>" başlığından yalnızca token kısmını alır. Başlık yok / biçim yanlışsa null.
-        private string? GetBearerToken()
-        {
-            string? authorization = httpContextAccessor.HttpContext?.Request.Headers.Authorization;
-            if (string.IsNullOrWhiteSpace(authorization) ||
-                !authorization.StartsWith(BearerPrefix, StringComparison.OrdinalIgnoreCase))
-                return null;
-
-            string token = authorization[BearerPrefix.Length..].Trim();
-            return token.Length == 0 ? null : token;
         }
     }
 }

@@ -20,11 +20,17 @@ namespace ECommerce.Application.Features.Auth.Commands.Login
             private readonly IUserRepository userRepository;
             private readonly AuthBusinessRules authBusinessRules;
             private readonly ITokenHelper tokenHelper; // Uludag.Core -> token'ın nasıl üretildiğini handler bilmez.
-            public LoginCommandHandler(IUserRepository userRepository, AuthBusinessRules authBusinessRules, ITokenHelper tokenHelper)
+            private readonly IUserOperationClaimRepository userOperationClaimRepository;
+            public LoginCommandHandler(
+                IUserRepository userRepository,
+                AuthBusinessRules authBusinessRules,
+                ITokenHelper tokenHelper,
+                IUserOperationClaimRepository userOperationClaimRepository)
             {
                 this.userRepository = userRepository;
                 this.authBusinessRules = authBusinessRules;
                 this.tokenHelper = tokenHelper;
+                this.userOperationClaimRepository = userOperationClaimRepository;
             }
 
             public async Task<LoginResponse> Handle(LoginCommand request, CancellationToken cancellationToken)
@@ -36,8 +42,12 @@ namespace ECommerce.Application.Features.Auth.Commands.Login
                 authBusinessRules.UserShouldExistWhenLoggingIn(user, request.Password);
                 authBusinessRules.PasswordShouldMatch(user, request.Password);
 
+                // Yetkiler -> token'a yazılır; AuthorizationBehavior her istekte bunları okur.
+                // Claim değişikliği bir sonraki login'de yansır.
+                List<string> operationClaims = await userOperationClaimRepository.GetOperationClaimNamesByUserIdAsync(user.Id, cancellationToken);
+
                 // Token
-                AccessToken accessToken = tokenHelper.CreateToken(user.Id, user.Email);
+                AccessToken accessToken = tokenHelper.CreateToken(user.Id, user.Email, operationClaims);
 
                 // Mapping
                 return UserMapper.MapAccessTokenToLoginResponse(accessToken);

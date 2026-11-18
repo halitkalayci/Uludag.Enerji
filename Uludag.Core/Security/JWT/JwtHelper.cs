@@ -17,7 +17,7 @@ namespace Uludag.Core.Security.JWT
             validationParameters = TokenValidationParametersHelper.Create(tokenOptions);
         }
 
-        public AccessToken CreateToken(Guid userId, string email)
+        public AccessToken CreateToken(Guid userId, string email, IEnumerable<string> operationClaims)
         {
             DateTime now = DateTime.UtcNow;
             DateTime expiration = now.AddMinutes(tokenOptions.AccessTokenExpiration);
@@ -35,7 +35,9 @@ namespace Uludag.Core.Security.JWT
                 [
                     new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
                     new Claim(JwtRegisteredClaimNames.Email, email),
-                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()) // Her token'a özel kimlik.
+                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()), // Her token'a özel kimlik.
+                    // Yetkiler: her operation claim ayrı bir rol claim'i (ör. "Product.Read").
+                    .. operationClaims.Select(operationClaim => new Claim(ClaimTypes.Role, operationClaim))
                 ]),
                 SigningCredentials = new SigningCredentials(
                     SecurityKeyHelper.CreateSecurityKey(tokenOptions.SecurityKey),
@@ -54,6 +56,19 @@ namespace Uludag.Core.Security.JWT
             // İmza, issuer, audience ve süre kontrolü. Hata fırlatmaz; sonucu IsValid ile döner.
             TokenValidationResult result = await tokenHandler.ValidateTokenAsync(token, validationParameters);
             return result.IsValid;
+        }
+
+        public async Task<IReadOnlyCollection<string>> GetOperationClaimsAsync(string token)
+        {
+            // Doğrulanmamış token'ın içeriğine güvenilmez: önce imza / süre kontrolü, sonra claim'ler.
+            TokenValidationResult result = await tokenHandler.ValidateTokenAsync(token, validationParameters);
+            if (!result.IsValid)
+                return [];
+
+            return result.ClaimsIdentity
+                .FindAll(ClaimTypes.Role)
+                .Select(claim => claim.Value)
+                .ToArray();
         }
     }
 }

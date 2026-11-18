@@ -1,6 +1,7 @@
 using ECommerce.Application.Exceptions;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Authentication;
+using Uludag.Core.Security.Authorization;
 
 namespace ECommerce.WebAPI.Middlewares
 {
@@ -9,6 +10,7 @@ namespace ECommerce.WebAPI.Middlewares
     //   NotFoundException -> 404
     //   BusinessException -> 400
     //   AuthenticationException -> 401
+    //   AuthorizationException -> 403
     // Diğer (beklenmeyen) istisnalara dokunulmaz -> 500.
     public class BusinessExceptionMiddleware
     {
@@ -37,6 +39,11 @@ namespace ECommerce.WebAPI.Middlewares
             catch (AuthenticationException exception)
             {
                 await WriteProblemAsync(context, StatusCodes.Status401Unauthorized, "Unauthorized", exception.Message);
+            }
+            // AuthorizationBehavior: giriş yapılmış ama gereken operation claim yok.
+            catch (AuthorizationException exception)
+            {
+                await WriteProblemAsync(context, StatusCodes.Status403Forbidden, "Forbidden", exception.Message);
             }
         }
 

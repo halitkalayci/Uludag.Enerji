@@ -5,9 +5,13 @@ namespace Uludag.Core.Security.JWT
     // Core, ECommerce'in User entity'sini tanımaz; bu yüzden token'a girecek bilgiler tek tek verilir.
     public interface ITokenHelper
     {
-        AccessToken CreateToken(Guid userId, string email);
+        // operationClaims -> kullanıcının yetki adları (ör. "Product.Read"); token'a rol claim'i olarak yazılır.
+        AccessToken CreateToken(Guid userId, string email, IEnumerable<string> operationClaims);
 
         // Token bizim tarafımızdan üretilmiş (imza, issuer, audience doğru) ve süresi geçmemişse true.
         Task<bool> ValidateTokenAsync(string token);
+
+        // Token'ı doğrular ve içindeki operation claim adlarını döner. Token geçersizse boş koleksiyon.
+        Task<IReadOnlyCollection<string>> GetOperationClaimsAsync(string token);
     }
 }
