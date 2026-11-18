@@ -7,6 +7,7 @@ namespace ECommerce.Application.Services.Repositories
     {
         Task<List<Domain.Entities.Product>> GetAllAsync(CancellationToken cancellationToken = default);
         Task<Domain.Entities.Product?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+        Task<Domain.Entities.Product?> GetByNameAsync(string name, CancellationToken cancellationToken = default);
         Task AddAsync(Domain.Entities.Product product, CancellationToken cancellationToken = default);
         Task UpdateAsync(Domain.Entities.Product product, CancellationToken cancellationToken = default);
         Task DeleteAsync(Domain.Entities.Product product, CancellationToken cancellationToken = default);

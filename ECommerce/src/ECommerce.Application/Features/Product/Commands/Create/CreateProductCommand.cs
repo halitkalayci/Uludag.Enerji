@@ -1,4 +1,5 @@
-﻿using ECommerce.Application.Services.Repositories;
+﻿using ECommerce.Application.Features.Product.Rules;
+using ECommerce.Application.Services.Repositories;
 using Uludag.Core.Mediation;
 
 namespace ECommerce.Application.Features.Product.Commands.Create
@@ -21,15 +22,20 @@ namespace ECommerce.Application.Features.Product.Commands.Create
         public class CreateProductCommandHandler : IRequestHandler<CreateProductCommand> // Komut handlerı, işleyen kişi.
         {
             // Dependency Injection
+            private readonly ProductBusinessRules productBusinessRules;
             private readonly IProductRepository productRepository; // persistence tarafından çözülüyor (sarmallayan)
-            public CreateProductCommandHandler(IProductRepository productRepository)
+            public CreateProductCommandHandler(IProductRepository productRepository, ProductBusinessRules productBusinessRules)
             {
                 this.productRepository = productRepository;
+                this.productBusinessRules = productBusinessRules;
             }
 
             public async Task Handle(CreateProductCommand request, CancellationToken cancellationToken)
             {
                 // Mapping
+                // En üstte. Bir kural eziliyorsa zaten işlem yapılmayacaktır.
+                await productBusinessRules.ProductNameCannotExist(request.Name);
+
                 Domain.Entities.Product product = new()
                 {
                     Name = request.Name,

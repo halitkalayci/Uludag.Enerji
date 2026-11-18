@@ -30,6 +30,11 @@ namespace ECommerce.Persistence.Repositories
             throw new NotImplementedException();
         }
 
+        public Task<Product?> GetByNameAsync(string name, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
         public Task UpdateAsync(Product product, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();

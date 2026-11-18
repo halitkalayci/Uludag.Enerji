@@ -45,5 +45,10 @@ namespace ECommerce.Persistence.Repositories
             uludagDbContext.Products.Remove(product);
             await uludagDbContext.SaveChangesAsync(cancellationToken);
         }
+
+        public async Task<Product?> GetByNameAsync(string name, CancellationToken cancellationToken = default)
+        {
+            return await uludagDbContext.Products.FirstOrDefaultAsync(p => p.Name == name);
+        }
     }
 }
