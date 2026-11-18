@@ -1,4 +1,5 @@
 using ECommerce.Application.Exceptions;
+using ECommerce.Application.Features.Order.Constants;
 using System.Diagnostics.CodeAnalysis;
 
 namespace ECommerce.Application.Features.Order.Rules
@@ -13,14 +14,14 @@ namespace ECommerce.Application.Features.Order.Rules
         public void OrderShouldExistWhenSelected([NotNull] Domain.Entities.Order? order)
         {
             if (order is null)
-                throw new NotFoundException("Order not found.");
+                throw new NotFoundException(OrderConstants.OrderNotFound);
         }
 
         // Sipariş en az bir kalemle oluşturulmalı.
         public void OrderShouldHaveAtLeastOneItem<TItem>([NotNull] ICollection<TItem>? items)
         {
             if (items is null || items.Count == 0)
-                throw new BusinessException("Order must contain at least one item.");
+                throw new BusinessException(OrderConstants.OrderMustContainAtLeastOneItem);
         }
     }
 }
