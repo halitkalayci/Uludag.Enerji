@@ -1,0 +1,16 @@
+**/bin/
+**/obj/
+**/.vs/
+**/.vscode/
+**/*.user
+**/node_modules/
+.git/
+.superpowers/
+docs/
+_migrations_postgres_backup/
+ECommerce/client/
+
+# Gizli bilgiler imaja girmez (SecurityKey, admin şifresi vb.).
+.env
+**/appsettings.Development.json
+**/secrets.json

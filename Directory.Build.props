@@ -1,0 +1,21 @@
+<Project>
+
+  <!--
+    Global güvenlik analizörü: ham SQL string'i kabul eden EF Core API'leri (FromSqlRaw,
+    ExecuteSqlRaw/ExecuteSqlRawAsync, SqlQueryRaw) SQL Injection'a açıktır. Bu API'ler
+    BannedSymbols.txt üzerinden yasaklanır ve RS0030 build HATASI olarak raporlanır.
+    Güvenli alternatifler: LINQ, FromSql/FromSqlInterpolated, ExecuteSql/ExecuteSqlInterpolated(Async).
+  -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="3.3.4">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)BannedSymbols.txt" Link="BannedSymbols.txt" Visible="false" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <WarningsAsErrors>$(WarningsAsErrors);RS0030</WarningsAsErrors>
+  </PropertyGroup>
+
+</Project>

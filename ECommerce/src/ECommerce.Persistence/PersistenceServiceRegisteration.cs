@@ -8,11 +8,13 @@ namespace ECommerce.Persistence
 {
     public static class PersistenceServiceRegisteration
     {
-        public static IServiceCollection AddPersistenceServices(this IServiceCollection services)
+        public static IServiceCollection AddPersistenceServices(this IServiceCollection services, string connectionString)
         {
             // bağlandığımız db..
+            // Bağlantı dizesi appsettings'teki "ConnectionStrings:ECommerce"tan gelir;
+            // Docker'da ConnectionStrings__ECommerce ortam değişkeniyle ezilir.
             //services.AddDbContext<UludagDbContext>(opt => opt.UseNpgsql("Host=localhost;Database=uludag;Username=postgres;Password=postgres"));
-            services.AddDbContext<UludagDbContext>(opt => opt.UseSqlServer("Server=127.0.0.1,1433;Database=uludag;User Id=sa;Password=Admin123!;TrustServerCertificate=True;"));
+            services.AddDbContext<UludagDbContext>(opt => opt.UseSqlServer(connectionString));
 
             // Repositories -> Application arayüzü ister, Persistence somut sınıfı verir.
             // Scoped: DbContext ile aynı ömür (istek başına bir tane).

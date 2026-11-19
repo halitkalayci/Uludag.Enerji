@@ -44,6 +44,9 @@ namespace ECommerce.WebAPI.Middlewares
             catch (AuthorizationException exception)
             {
                 await WriteProblemAsync(context, StatusCodes.Status403Forbidden, "Forbidden", exception.Message);
+            }catch (Exception ex)
+            {
+                await WriteProblemAsync(context, StatusCodes.Status500InternalServerError, "InternalServerError", "Beklenmedik bir hata oluştu.");
             }
         }
 

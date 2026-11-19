@@ -25,7 +25,9 @@ builder.Services.AddControllers();
 builder.Services.AddApplicationServices();
 // Bu application katmanının bağımlılıkları..
 // Başka bir katman adına karar vermemeli.
-builder.Services.AddPersistenceServices();
+string connectionString = builder.Configuration.GetConnectionString("ECommerce")
+    ?? throw new InvalidOperationException("appsettings'te 'ConnectionStrings:ECommerce' bulunamadı.");
+builder.Services.AddPersistenceServices(connectionString);
 
 // Cache -> Uludag.Core (ICacheService).
 // "RedisOptions:ConnectionString" doluysa Redis (docker-compose), boşsa / yoksa in-memory.

@@ -2,6 +2,8 @@ using ECommerce.Application.Services.Repositories;
 using ECommerce.Domain.Entities;
 using ECommerce.Persistence.Contexts;
 using Microsoft.EntityFrameworkCore;
+using StackExchange.Redis;
+using Order = ECommerce.Domain.Entities.Order;
 
 namespace ECommerce.Persistence.Repositories
 {
@@ -17,17 +19,26 @@ namespace ECommerce.Persistence.Repositories
 
         public async Task<List<Order>> GetAllAsync(CancellationToken cancellationToken = default)
         {
+            //var result = uludagDbContext.Orders.FromSqlRaw($"Select * from Orders where true; DROP TABLE orders;{input}");
+            // CMD => 
+            // SQL,
+            // XSS -> Metin birleştirme yasak, kullanılabiliyorsa parametrik birleştirme, kullanılamıyorsa SANITIZE işlemi.
             return await uludagDbContext.Orders
                 .AsNoTracking()
                 .ToListAsync(cancellationToken);
+
         }
 
         public async Task<List<Order>> GetAllByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
         {
+            // bu kod SQL Injection'a açıktır, EF Core'un Where() metodu kullanılmalıydı.
+
+            /// Injection -> Metini direkt sql'e (cmd, xss) asla gönderme. 
+            /// Never Trust User Input.
             return await uludagDbContext.Orders
                 .AsNoTracking()
                 .Where(o => o.UserId == userId)
-                .ToListAsync(cancellationToken);
+                .ToListAsync(cancellationToken); // EF Core -> SQL Transform -> SQL Injection'a kapalı.
         }
 
         public async Task<Order?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
