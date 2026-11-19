@@ -1,4 +1,5 @@
 using ECommerce.Application.Features.Auth.Commands.Login;
+using ECommerce.Application.Features.Auth.Commands.RefreshToken;
 using ECommerce.Application.Features.Auth.Commands.Register;
 using ECommerce.Application.Features.Auth.Commands.VerifyOtpAuthenticator;
 using Uludag.Core.Security.JWT;
@@ -33,13 +34,27 @@ namespace ECommerce.Application.Features.Auth.Mappers
             };
         }
 
-        // Core'un AccessToken'ı doğrudan dışarı açılmaz; API'nin kendi response modeline çevrilir.
-        public static VerifyOtpAuthenticatorResponse MapAccessTokenToVerifyOtpAuthenticatorResponse(AccessToken accessToken)
+        // Core'un AccessToken / IssuedRefreshToken'ı doğrudan dışarı açılmaz; API'nin kendi response modeline çevrilir.
+        // Refresh token'ın düz değeri yalnızca burada, bir kez istemciye döner (DB'de yalnızca özeti var).
+        public static VerifyOtpAuthenticatorResponse MapToVerifyOtpAuthenticatorResponse(AccessToken accessToken, IssuedRefreshToken issuedRefreshToken)
         {
             return new VerifyOtpAuthenticatorResponse
             {
                 AccessToken = accessToken.Token,
-                Expiration = accessToken.Expiration
+                Expiration = accessToken.Expiration,
+                RefreshToken = issuedRefreshToken.Token,
+                RefreshTokenExpiration = issuedRefreshToken.Expiration
+            };
+        }
+
+        public static RefreshTokenResponse MapToRefreshTokenResponse(AccessToken accessToken, IssuedRefreshToken issuedRefreshToken)
+        {
+            return new RefreshTokenResponse
+            {
+                AccessToken = accessToken.Token,
+                Expiration = accessToken.Expiration,
+                RefreshToken = issuedRefreshToken.Token,
+                RefreshTokenExpiration = issuedRefreshToken.Expiration
             };
         }
     }

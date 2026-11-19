@@ -20,5 +20,8 @@ namespace ECommerce.Domain.Entities
 
         // Authenticator (TOTP) kaydı. null -> MFA hiç kurulmamış.
         public virtual OtpAuthenticator? OtpAuthenticator { get; set; }
+
+        // Kullanıcının refresh token kayıtları (aktif + revoke edilmiş / süresi dolmuş).
+        public virtual ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
     }
 }

@@ -19,18 +19,21 @@ namespace ECommerce.Application.Features.Auth.Rules
         private readonly IOtpAuthenticatorRepository otpAuthenticatorRepository;
         private readonly IOtpAuthenticatorHelper otpAuthenticatorHelper; // Uludag.Core -> kodun nasıl doğrulandığını (OtpNet) kural bilmez.
         private readonly IMultiFactorSessionHelper multiFactorSessionHelper;
+        private readonly IRefreshTokenRepository refreshTokenRepository;
         public AuthBusinessRules(
             IUserRepository userRepository,
             IUserOperationClaimRepository userOperationClaimRepository,
             IOtpAuthenticatorRepository otpAuthenticatorRepository,
             IOtpAuthenticatorHelper otpAuthenticatorHelper,
-            IMultiFactorSessionHelper multiFactorSessionHelper)
+            IMultiFactorSessionHelper multiFactorSessionHelper,
+            IRefreshTokenRepository refreshTokenRepository)
         {
             this.userRepository = userRepository;
             this.userOperationClaimRepository = userOperationClaimRepository;
             this.otpAuthenticatorRepository = otpAuthenticatorRepository;
             this.otpAuthenticatorHelper = otpAuthenticatorHelper;
             this.multiFactorSessionHelper = multiFactorSessionHelper;
+            this.refreshTokenRepository = refreshTokenRepository;
         }
 
         // Rol atanacak kullanıcı var olmalı -> yoksa 404.
@@ -142,6 +145,51 @@ namespace ECommerce.Application.Features.Auth.Rules
         {
             if (!otpAuthenticatorHelper.VerifyCode(secretKey, authenticatorCode))
                 throw new BusinessException(AuthConstants.InvalidAuthenticatorCode);
+        }
+
+        // ---- Refresh Token ----
+
+        // Gönderilen token'ın (özetinin) kaydı olmalı -> yoksa 400.
+        // [NotNull]: Metot hata fırlatmadan dönerse derleyici refreshToken'ın artık null olmadığını bilir.
+        public void RefreshTokenShouldExist([NotNull] Domain.Entities.RefreshToken? refreshToken)
+        {
+            if (refreshToken is null)
+                throw new BusinessException(AuthConstants.InvalidRefreshToken);
+        }
+
+        // Revoke edilmiş (kullanılmış / iptal edilmiş) bir token tekrar gelirse token çalınmış sayılır:
+        // ya saldırgan ya da gerçek kullanıcı eski bir kopyayı kullanıyor, hangisi olduğu bilinemez.
+        // Güvenli taraf: aynı girişten türeyen aktif token da revoke edilir, iki taraf da yeniden login olmak zorunda kalır -> 400.
+        public async Task RefreshTokenShouldNotBeRevoked(Domain.Entities.RefreshToken refreshToken, CancellationToken cancellationToken = default)
+        {
+            if (refreshToken.RevokedAt is not null)
+            {
+                await refreshTokenRepository.RevokeActiveFamilyAsync(
+                    refreshToken.FamilyId,
+                    Domain.Entities.RefreshTokenRevocationReason.ReuseDetected,
+                    cancellationToken);
+                throw new BusinessException(AuthConstants.RefreshTokenReuseDetected);
+            }
+        }
+
+        // Süresi (3 gün) dolmuş token kullanılamaz / revoke edilemez -> 400, yeniden login.
+        public void RefreshTokenShouldNotBeExpired(Domain.Entities.RefreshToken refreshToken)
+        {
+            if (refreshToken.ExpiresAt <= DateTime.UtcNow)
+                throw new BusinessException(AuthConstants.RefreshTokenExpired);
+        }
+
+        // Token'ı atomik olarak revoke eder; yalnızca hâlâ aktifse başarılı olur.
+        // Aynı token ile eşzamanlı iki istek gelirse yalnızca biri geçer, diğeri 400 alır -> bir token'dan iki çift üretilemez.
+        // Önce revoke, sonra yeni token (VerificationAttemptShouldBeAllowed ile aynı yaklaşım: önce hak harcanır).
+        public async Task RefreshTokenShouldBeRevoked(
+            Guid refreshTokenId,
+            Domain.Entities.RefreshTokenRevocationReason reason,
+            Guid? replacedByTokenId = null,
+            CancellationToken cancellationToken = default)
+        {
+            if (!await refreshTokenRepository.TryRevokeActiveAsync(refreshTokenId, reason, replacedByTokenId, cancellationToken))
+                throw new BusinessException(AuthConstants.InvalidRefreshToken);
         }
     }
 }

@@ -8,3 +8,6 @@ MultiFactorAlreadyEnabled: "Bu kullanıcı için iki adımlı doğrulama zaten e
 OtpAuthenticatorNotSetUp: "Authenticator kurulumu başlatılmamış. Önce kurulum adresini çağırın."
 InvalidAuthenticatorCode: "Doğrulama kodu hatalı."
 TooManyAuthenticatorAttempts: "Çok fazla hatalı kod denemesi. Lütfen daha sonra tekrar deneyin."
+InvalidRefreshToken: "Refresh token geçersiz. Lütfen tekrar giriş yapın."
+RefreshTokenExpired: "Refresh token'ın süresi dolmuş. Lütfen tekrar giriş yapın."
+RefreshTokenReuseDetected: "Bu refresh token daha önce kullanılmış veya iptal edilmiş. Güvenlik nedeniyle bu girişe ait oturumlar sonlandırıldı. Lütfen tekrar giriş yapın."

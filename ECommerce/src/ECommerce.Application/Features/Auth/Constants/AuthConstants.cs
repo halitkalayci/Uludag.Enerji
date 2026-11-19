@@ -12,5 +12,8 @@ namespace ECommerce.Application.Features.Auth.Constants
         public const string OtpAuthenticatorNotSetUp = "OtpAuthenticatorNotSetUp";
         public const string InvalidAuthenticatorCode = "InvalidAuthenticatorCode";
         public const string TooManyAuthenticatorAttempts = "TooManyAuthenticatorAttempts";
+        public const string InvalidRefreshToken = "InvalidRefreshToken";
+        public const string RefreshTokenExpired = "RefreshTokenExpired";
+        public const string RefreshTokenReuseDetected = "RefreshTokenReuseDetected";
     }
 }

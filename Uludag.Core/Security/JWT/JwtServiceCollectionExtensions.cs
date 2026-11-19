@@ -18,6 +18,8 @@ namespace Microsoft.Extensions.DependencyInjection
                 throw new ArgumentException("TokenOptions.SecurityKey en az 32 karakter olmalıdır.", nameof(tokenOptions));
             if (tokenOptions.AccessTokenExpiration <= 0)
                 throw new ArgumentException("TokenOptions.AccessTokenExpiration sıfırdan büyük olmalıdır.", nameof(tokenOptions));
+            if (tokenOptions.RefreshTokenExpiration <= 0)
+                throw new ArgumentException("TokenOptions.RefreshTokenExpiration sıfırdan büyük olmalıdır.", nameof(tokenOptions));
 
             // Singleton: ayarlar uygulama boyunca değişmez, JwtHelper durum tutmaz (oturumlar ICacheService'te, o da singleton).
             services.AddSingleton(tokenOptions);

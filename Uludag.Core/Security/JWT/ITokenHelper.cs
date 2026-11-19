@@ -24,5 +24,12 @@ namespace Uludag.Core.Security.JWT
         // bir sonraki istekte yeni yetkilerle çalışır. operationClaims -> kullanıcının GÜNCEL yetki listesinin tamamı.
         // Kullanıcının aktif oturumu yoksa hiçbir şey yapmaz (yetkiler zaten bir sonraki login'de yazılır).
         Task RefreshOperationClaimsAsync(Guid userId, IEnumerable<string> operationClaims);
+
+        // Yeni bir refresh token üretir (tahmin edilemez rastgele değer + SHA-256 özeti + bitiş zamanı).
+        // Saklama, rotasyon ve iptal (revoke) uygulamanın işidir; Core yalnızca değeri üretir.
+        IssuedRefreshToken CreateRefreshToken();
+
+        // İstemciden gelen düz refresh token'ın veritabanında aranacak özetini üretir.
+        string HashRefreshToken(string refreshToken);
     }
 }

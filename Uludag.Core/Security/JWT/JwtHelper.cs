@@ -1,6 +1,8 @@
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
 using Uludag.Core.Caching;
 
 namespace Uludag.Core.Security.JWT
@@ -21,6 +23,9 @@ namespace Uludag.Core.Security.JWT
 
         private const string SessionCacheKeyPrefix = "token-session:";
         private const string OperationClaimsCacheKeyPrefix = "user-operation-claims:";
+
+        // Refresh token: 512 bit rastgele -> tahmin edilemez.
+        private const int RefreshTokenByteLength = 64;
 
         // Cache'teki oturum kaydı. Yetkiler burada değil, kullanıcının ortak kaydında durur.
         private sealed record StoredTokenSession(Guid UserId, string Email, DateTime Expiration);
@@ -120,6 +125,27 @@ namespace Uludag.Core.Security.JWT
             // Yalnızca kayıt varsa (kullanıcının aktif oturumu varsa) ve kalan süresine dokunmadan güncellenir.
             // Oturumu olmayan kullanıcı için kayıt açılmaz; yetkiler bir sonraki login'de zaten yazılır.
             await cacheService.SetIfExistsAsync(BuildOperationClaimsCacheKey(userId), operationClaims.ToList());
+        }
+
+        public IssuedRefreshToken CreateRefreshToken()
+        {
+            // Hex -> URL / JSON içinde kaçış gerektirmez.
+            string refreshToken = Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(RefreshTokenByteLength));
+
+            return new IssuedRefreshToken
+            {
+                Token = refreshToken,
+                TokenHash = HashRefreshToken(refreshToken),
+                Expiration = DateTime.UtcNow.AddDays(tokenOptions.RefreshTokenExpiration)
+            };
+        }
+
+        public string HashRefreshToken(string refreshToken)
+        {
+            // Salt'sız SHA-256 yeterli: token 512 bit rastgele olduğu için sözlük / rainbow table saldırısı anlamsızdır,
+            // ve salt olmadığı için DB'de doğrudan özetle (unique index üzerinden) aranabilir.
+            // Şifre hash'i (HashingHelper) burada kullanılmaz: yavaş ve salt'lı olduğundan özetle arama yapılamaz.
+            return Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(refreshToken ?? string.Empty)));
         }
 
         private static string BuildSessionCacheKey(string sessionKey) => SessionCacheKeyPrefix + sessionKey;

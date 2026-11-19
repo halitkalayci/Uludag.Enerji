@@ -227,6 +227,53 @@ namespace ECommerce.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("ECommerce.Domain.Entities.RefreshToken", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("ReplacedByTokenId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("RevocationReason")
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<DateTime?>("RevokedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .IsUnicode(false)
+                        .HasColumnType("char(64)")
+                        .IsFixedLength();
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FamilyId");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("RefreshTokens");
+                });
+
             modelBuilder.Entity("ECommerce.Domain.Entities.User", b =>
                 {
                     b.Property<Guid>("Id")
@@ -391,6 +438,17 @@ namespace ECommerce.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("ECommerce.Domain.Entities.RefreshToken", b =>
+                {
+                    b.HasOne("ECommerce.Domain.Entities.User", "User")
+                        .WithMany("RefreshTokens")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("ECommerce.Domain.Entities.UserOperationClaim", b =>
                 {
                     b.HasOne("ECommerce.Domain.Entities.OperationClaim", "OperationClaim")
@@ -423,6 +481,8 @@ namespace ECommerce.Persistence.Migrations
             modelBuilder.Entity("ECommerce.Domain.Entities.User", b =>
                 {
                     b.Navigation("OtpAuthenticator");
+
+                    b.Navigation("RefreshTokens");
 
                     b.Navigation("UserOperationClaims");
                 });

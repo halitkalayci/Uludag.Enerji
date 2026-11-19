@@ -11,7 +11,7 @@ namespace ECommerce.Application.Features.Auth.Commands.VerifyOtpAuthenticator
     // İki durumda da aynı istek kullanılır:
     //   - İlk kurulum (SetupRequired): /api/auth/mfa/setup'tan sonra uygulamanın ilk kodu -> MFA aktif olur.
     //   - Sonraki girişler (CodeRequired): uygulamanın o anki kodu.
-    // Sonuçlar: başarılı -> 200 + JWT, token geçersiz / kurulum yok / kod yanlış / deneme hakkı bitti -> 400.
+    // Sonuçlar: başarılı -> 200 + JWT + refresh token (3 gün), token geçersiz / kurulum yok / kod yanlış / deneme hakkı bitti -> 400.
     // MFA token'ı tek kullanımlıktır: başarılı doğrulamadan sonra silinir.
     // IAllowAnonymousRequest -> kullanıcının henüz JWT'si yok; kimliğini login'de aldığı MFA token'ı kanıtlar.
     public class VerifyOtpAuthenticatorCommand : IRequest<VerifyOtpAuthenticatorResponse>, IAllowAnonymousRequest
@@ -28,17 +28,20 @@ namespace ECommerce.Application.Features.Auth.Commands.VerifyOtpAuthenticator
             private readonly AuthBusinessRules authBusinessRules;
             private readonly IMultiFactorSessionHelper multiFactorSessionHelper;
             private readonly ITokenHelper tokenHelper; // Uludag.Core -> token'ın nasıl üretildiğini handler bilmez.
+            private readonly IRefreshTokenRepository refreshTokenRepository;
             public VerifyOtpAuthenticatorCommandHandler(
                 IUserRepository userRepository,
                 IOtpAuthenticatorRepository otpAuthenticatorRepository,
                 IUserOperationClaimRepository userOperationClaimRepository,
                 AuthBusinessRules authBusinessRules,
                 IMultiFactorSessionHelper multiFactorSessionHelper,
-                ITokenHelper tokenHelper)
+                ITokenHelper tokenHelper,
+                IRefreshTokenRepository refreshTokenRepository)
             {
                 this.userRepository = userRepository;
                 this.otpAuthenticatorRepository = otpAuthenticatorRepository;
                 this.userOperationClaimRepository = userOperationClaimRepository;
+                this.refreshTokenRepository = refreshTokenRepository;
                 this.authBusinessRules = authBusinessRules;
                 this.multiFactorSessionHelper = multiFactorSessionHelper;
                 this.tokenHelper = tokenHelper;
@@ -73,8 +76,13 @@ namespace ECommerce.Application.Features.Auth.Commands.VerifyOtpAuthenticator
                 // Token -> id, e-posta ve yetkiler Redis'e yazılır; JWT yalnızca o kaydın anahtarını taşır.
                 AccessToken accessToken = await tokenHelper.CreateTokenAsync(user.Id, user.Email, operationClaims);
 
+                // Refresh token -> her giriş yeni bir aile başlatır. DB'ye yalnızca özeti yazılır.
+                IssuedRefreshToken issuedRefreshToken = tokenHelper.CreateRefreshToken();
+                Domain.Entities.RefreshToken refreshToken = RefreshTokenMapper.MapToNewFamilyRefreshToken(user.Id, issuedRefreshToken);
+                await refreshTokenRepository.AddAsync(refreshToken, cancellationToken);
+
                 // Mapping
-                return UserMapper.MapAccessTokenToVerifyOtpAuthenticatorResponse(accessToken);
+                return UserMapper.MapToVerifyOtpAuthenticatorResponse(accessToken, issuedRefreshToken);
             }
         }
     }

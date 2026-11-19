@@ -1,6 +1,8 @@
 using ECommerce.Application.Features.Auth.Commands.AssignOperationClaim;
 using ECommerce.Application.Features.Auth.Commands.Login;
+using ECommerce.Application.Features.Auth.Commands.RefreshToken;
 using ECommerce.Application.Features.Auth.Commands.Register;
+using ECommerce.Application.Features.Auth.Commands.RevokeRefreshToken;
 using ECommerce.Application.Features.Auth.Commands.SetupOtpAuthenticator;
 using ECommerce.Application.Features.Auth.Commands.VerifyOtpAuthenticator;
 using Microsoft.AspNetCore.Mvc;
@@ -43,10 +45,28 @@ namespace ECommerce.WebAPI.Controllers
         [HttpPost("mfa/verify")]
         public async Task<IActionResult> VerifyOtpAuthenticator([FromBody] VerifyOtpAuthenticatorCommand verifyOtpAuthenticatorCommand, CancellationToken cancellationToken)
         {
-            // Başarılı -> 200 + JWT (ilk kurulumda MFA da aktif olur).
+            // Başarılı -> 200 + JWT + refresh token (ilk kurulumda MFA da aktif olur).
             // MFA token'ı geçersiz / kurulum yok / kod yanlış / deneme hakkı bitti -> 400.
             VerifyOtpAuthenticatorResponse verifyOtpAuthenticatorResponse = await mediator.Send(verifyOtpAuthenticatorCommand, cancellationToken);
             return Ok(verifyOtpAuthenticatorResponse);
+        }
+
+        [HttpPost("refresh-token")]
+        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenCommand refreshTokenCommand, CancellationToken cancellationToken)
+        {
+            // Başarılı -> 200 + YENİ JWT + YENİ refresh token; gönderilen refresh token artık geçersiz.
+            // Token yok / süresi dolmuş / revoke edilmiş (tekrar kullanım -> ailesi de revoke edilir) -> 400.
+            RefreshTokenResponse refreshTokenResponse = await mediator.Send(refreshTokenCommand, cancellationToken);
+            return Ok(refreshTokenResponse);
+        }
+
+        [HttpPost("revoke-token")]
+        public async Task<IActionResult> RevokeRefreshToken([FromBody] RevokeRefreshTokenCommand revokeRefreshTokenCommand, CancellationToken cancellationToken)
+        {
+            // Başarılı -> 204; bu refresh token ile artık yeni JWT alınamaz.
+            // Token yok / süresi dolmuş / zaten revoke edilmiş -> 400.
+            await mediator.Send(revokeRefreshTokenCommand, cancellationToken);
+            return NoContent();
         }
 
         [HttpPost("assign-operation-claim")]

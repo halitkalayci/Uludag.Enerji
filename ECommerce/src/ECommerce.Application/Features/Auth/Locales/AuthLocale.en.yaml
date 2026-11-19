@@ -8,3 +8,6 @@ MultiFactorAlreadyEnabled: "Multi-factor authentication is already enabled for t
 OtpAuthenticatorNotSetUp: "Authenticator setup has not been started. Call the setup endpoint first."
 InvalidAuthenticatorCode: "Invalid authenticator code."
 TooManyAuthenticatorAttempts: "Too many invalid code attempts. Please try again later."
+InvalidRefreshToken: "Invalid refresh token. Please log in again."
+RefreshTokenExpired: "Refresh token has expired. Please log in again."
+RefreshTokenReuseDetected: "This refresh token has already been used or revoked. All sessions derived from this login were ended for security. Please log in again."
