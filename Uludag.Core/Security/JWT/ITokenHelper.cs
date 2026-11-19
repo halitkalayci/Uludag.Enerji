@@ -25,6 +25,11 @@ namespace Uludag.Core.Security.JWT
         // Kullanıcının aktif oturumu yoksa hiçbir şey yapmaz (yetkiler zaten bir sonraki login'de yazılır).
         Task RefreshOperationClaimsAsync(Guid userId, IEnumerable<string> operationClaims);
 
+        // Çıkış (logout): kullanıcının cache'teki TÜM token oturumlarını (her cihaz / her giriş) ve yetki kaydını siler.
+        // Bu çağrıdan sonra kullanıcının daha önce aldığı bütün JWT'ler, imzası ve süresi geçerli olsa bile 401 alır.
+        // Refresh token'lar uygulamanın veritabanındadır; onları iptal etmek uygulamanın işidir.
+        Task RevokeAllTokenSessionsAsync(Guid userId);
+
         // Yeni bir refresh token üretir (tahmin edilemez rastgele değer + SHA-256 özeti + bitiş zamanı).
         // Saklama, rotasyon ve iptal (revoke) uygulamanın işidir; Core yalnızca değeri üretir.
         IssuedRefreshToken CreateRefreshToken();

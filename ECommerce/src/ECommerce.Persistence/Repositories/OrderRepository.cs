@@ -22,6 +22,14 @@ namespace ECommerce.Persistence.Repositories
                 .ToListAsync(cancellationToken);
         }
 
+        public async Task<List<Order>> GetAllByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
+        {
+            return await uludagDbContext.Orders
+                .AsNoTracking()
+                .Where(o => o.UserId == userId)
+                .ToListAsync(cancellationToken);
+        }
+
         public async Task<Order?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
             return await uludagDbContext.Orders

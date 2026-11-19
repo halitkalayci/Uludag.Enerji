@@ -8,7 +8,7 @@ namespace ECommerce.Application.Features.Product.Commands.Create
 {
     public class CreateProductCommand : IRequest, ISecuredRequest // komut varolmadan (geriye değer döndürmeyen istek)
     {
-        // Yetki: Product.Admin, Product.Write veya Product.Create claim'lerinden biri yeterli (global Admin her zaman geçer).
+        // Yetki: Product.Admin, Product.Write veya Product.Create claim'lerindeexn biri yeterli (global Admin her zaman geçer).
         // Açık (explicit) implementasyon: public property olmaz, JSON gövdesine / Swagger'a girmez.
         string[] ISecuredRequest.Roles => [ProductOperationClaims.Admin, ProductOperationClaims.Write, ProductOperationClaims.Create];
 

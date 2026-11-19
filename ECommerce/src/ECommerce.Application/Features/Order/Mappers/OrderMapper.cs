@@ -11,14 +11,17 @@ namespace ECommerce.Application.Features.Order.Mappers
     {
         // Siparişi kalemleriyle birlikte oluşturur (aggregate).
         // products: kalemlerdeki ürünler, ProductId'ye göre (handler kuralları geçirip servisten getirmiş olmalı).
-        // OrderDate ve fiyatlar istemciden alınmaz, sunucu belirler.
+        // userId: siparişin sahibi (isteği yapan kullanıcının token oturumundan).
+        // OrderDate, fiyatlar ve sahip istemciden alınmaz, sunucu belirler.
         public static Domain.Entities.Order MapCreateCommandToOrder(
             CreateOrderCommand command,
-            IReadOnlyDictionary<Guid, Domain.Entities.Product> products)
+            IReadOnlyDictionary<Guid, Domain.Entities.Product> products,
+            Guid userId)
         {
             Domain.Entities.Order order = new()
             {
-                OrderDate = DateTime.UtcNow
+                OrderDate = DateTime.UtcNow,
+                UserId = userId
             };
 
             foreach (CreateOrderCommand.CreateOrderItemDto item in command.Items)
@@ -43,6 +46,7 @@ namespace ECommerce.Application.Features.Order.Mappers
             return new OrderResponse
             {
                 Id = order.Id,
+                UserId = order.UserId,
                 OrderDate = order.OrderDate,
                 TotalPrice = order.TotalPrice.Amount,
                 Currency = order.TotalPrice.Currency

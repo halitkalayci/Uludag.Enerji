@@ -1,29 +1,44 @@
+using ECommerce.Application.Features.Auth.Rules;
 using ECommerce.Application.Features.Order.Mappers;
 using ECommerce.Application.Services.Repositories;
-using ECommerce.Application.Features.Order.Constants;
 using Uludag.Core.Mediation;
+using Uludag.Core.Security.JWT;
 
 namespace ECommerce.Application.Features.Order.Queries.GetAll
 {
-    // Gövdesi boş sorgu: tüm siparişleri ister.
-    public class GetAllOrderQuery : IRequest<List<OrderResponse>>, ISecuredRequest
+    // Gövdesi boş sorgu: giriş yapmış kullanıcının KENDİ siparişlerini ister.
+    // Kullanıcı gövdeden değil, isteğin Bearer token'ının oturumundan alınır (başkasının siparişleri görülemez).
+    // Rol (ISecuredRequest) istenmez; IAllowAnonymousRequest de DEĞİL -> AuthenticationBehavior geçerli bir JWT ister.
+    // Sonuçlar:
+    //   başarılı -> 200 (siparişi yoksa boş liste)
+    //   token yok / geçersiz / oturumu kapanmış -> 401
+    public class GetAllOrderQuery : IRequest<List<OrderResponse>>
     {
-        // Yetki: Order.Admin veya Order.Read claim'lerinden biri yeterli (global Admin her zaman geçer).
-        // Açık (explicit) implementasyon: public property olmaz, JSON gövdesine / Swagger'a girmez.
-        string[] ISecuredRequest.Roles => [OrderOperationClaims.Admin, OrderOperationClaims.Read];
-
         public class GetAllOrderQueryHandler : IRequestHandler<GetAllOrderQuery, List<OrderResponse>>
         {
             // Dependency Injection
             private readonly IOrderRepository orderRepository;
-            public GetAllOrderQueryHandler(IOrderRepository orderRepository)
+            private readonly AuthBusinessRules authBusinessRules;
+            private readonly ITokenSessionAccessor tokenSessionAccessor; // "kim giriş yapmış" -> kimin siparişleri.
+            public GetAllOrderQueryHandler(
+                IOrderRepository orderRepository,
+                AuthBusinessRules authBusinessRules,
+                ITokenSessionAccessor tokenSessionAccessor)
             {
                 this.orderRepository = orderRepository;
+                this.authBusinessRules = authBusinessRules;
+                this.tokenSessionAccessor = tokenSessionAccessor;
             }
 
             public async Task<List<OrderResponse>> Handle(GetAllOrderQuery request, CancellationToken cancellationToken)
             {
-                List<Domain.Entities.Order> orders = await orderRepository.GetAllAsync(cancellationToken);
+                // İsteği yapan kullanıcının oturumu (Redis).
+                TokenSession? tokenSession = await tokenSessionAccessor.GetCurrentTokenSessionAsync();
+
+                // İş kuralları
+                authBusinessRules.TokenSessionShouldExist(tokenSession);
+
+                List<Domain.Entities.Order> orders = await orderRepository.GetAllByUserIdAsync(tokenSession.UserId, cancellationToken);
 
                 // Mapping
                 return OrderMapper.MapOrdersToResponses(orders);

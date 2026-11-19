@@ -58,6 +58,46 @@ namespace Uludag.Core.Caching.Redis
             await Database.KeyDeleteAsync(BuildKey(key));
         }
 
+        public async Task RemoveAsync(IEnumerable<string> keys)
+        {
+            RedisKey[] redisKeys = keys.Select(BuildKey).ToArray();
+            if (redisKeys.Length == 0)
+                return;
+
+            // Tek komut: DEL key1 key2 ...
+            await Database.KeyDeleteAsync(redisKeys);
+        }
+
+        // SADD + süre ayarı tek Lua script'inde -> atomik.
+        // Süre yalnızca uzatılır: PTTL < istenen ise PEXPIRE. (Yeni oluşan kümenin süresi yoktur, PTTL = -1 -> ayarlanır.)
+        // "PEXPIRE ... GT" kullanılmaz: süresiz anahtarı sonsuz kabul ettiği için yeni kümeye süre koymaz.
+        private const string AddToSetScript =
+            "redis.call('SADD', KEYS[1], ARGV[1]) " +
+            "local ttl = redis.call('PTTL', KEYS[1]) " +
+            "if ttl < tonumber(ARGV[2]) then redis.call('PEXPIRE', KEYS[1], ARGV[2]) end " +
+            "return 1";
+
+        public async Task AddToSetAsync(string key, string member, TimeSpan expiration)
+        {
+            await Database.ScriptEvaluateAsync(
+                AddToSetScript,
+                [BuildKey(key)],
+                [member, (long)expiration.TotalMilliseconds]);
+        }
+
+        // SMEMBERS + DEL tek Lua script'inde -> atomik.
+        private const string PopAllFromSetScript =
+            "local members = redis.call('SMEMBERS', KEYS[1]) " +
+            "redis.call('DEL', KEYS[1]) " +
+            "return members";
+
+        public async Task<IReadOnlyCollection<string>> PopAllFromSetAsync(string key)
+        {
+            RedisResult result = await Database.ScriptEvaluateAsync(PopAllFromSetScript, [BuildKey(key)]);
+            RedisValue[] members = (RedisValue[]?)result ?? [];
+            return members.Select(member => member.ToString()).ToList();
+        }
+
         private RedisKey BuildKey(string key) => instanceName + key;
     }
 }

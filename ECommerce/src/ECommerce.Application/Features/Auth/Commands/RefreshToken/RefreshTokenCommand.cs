@@ -53,7 +53,7 @@ namespace ECommerce.Application.Features.Auth.Commands.RefreshToken
 
                 Domain.Entities.User? user = await userRepository.GetByIdAsync(currentRefreshToken.UserId, cancellationToken);
                 authBusinessRules.UserShouldExistWhenSelected(user);
-
+                 
                 // Yeni refresh token -> aynı ailede kalır.
                 IssuedRefreshToken issuedRefreshToken = tokenHelper.CreateRefreshToken();
                 Domain.Entities.RefreshToken nextRefreshToken = RefreshTokenMapper.MapToRefreshToken(user.Id, currentRefreshToken.FamilyId, issuedRefreshToken);

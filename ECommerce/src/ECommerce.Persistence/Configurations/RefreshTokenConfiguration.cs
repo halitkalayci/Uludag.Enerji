@@ -32,7 +32,7 @@ namespace ECommerce.Persistence.Configurations
             builder
                 .HasIndex(r => r.FamilyId);
 
-            // Enum DB'ye sayı değil ad olarak yazılır ("Rotated", "RevokedByUser", "ReuseDetected").
+            // Enum DB'ye sayı değil ad olarak yazılır ("Rotated", "RevokedByUser", "ReuseDetected", "LoggedOut").
             builder
                 .Property(r => r.RevocationReason)
                 .HasConversion<string>()

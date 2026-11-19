@@ -1,5 +1,6 @@
 using ECommerce.Application.Features.Auth.Commands.AssignOperationClaim;
 using ECommerce.Application.Features.Auth.Commands.Login;
+using ECommerce.Application.Features.Auth.Commands.Logout;
 using ECommerce.Application.Features.Auth.Commands.RefreshToken;
 using ECommerce.Application.Features.Auth.Commands.Register;
 using ECommerce.Application.Features.Auth.Commands.RevokeRefreshToken;
@@ -66,6 +67,16 @@ namespace ECommerce.WebAPI.Controllers
             // Başarılı -> 204; bu refresh token ile artık yeni JWT alınamaz.
             // Token yok / süresi dolmuş / zaten revoke edilmiş -> 400.
             await mediator.Send(revokeRefreshTokenCommand, cancellationToken);
+            return NoContent();
+        }
+
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout(CancellationToken cancellationToken)
+        {
+            // Bearer token gerekli; gövde yok. Kullanıcı token'ın oturumundan alınır.
+            // Başarılı -> 204; kullanıcının tüm refresh token'ları revoke edilir, tüm JWT oturumları Redis'ten silinir
+            // (bütün cihazlarda çıkış). Token yok / geçersiz / oturum zaten kapalı -> 401.
+            await mediator.Send(new LogoutCommand(), cancellationToken);
             return NoContent();
         }
 

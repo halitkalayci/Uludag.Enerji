@@ -1,3 +1,4 @@
+using ECommerce.Application.Features.Auth.Rules;
 using ECommerce.Application.Features.Order.Mappers;
 using ECommerce.Application.Features.Order.Rules;
 using ECommerce.Application.Features.OrderItem.Rules;
@@ -5,18 +6,20 @@ using ECommerce.Application.Services.ProductService;
 using ECommerce.Application.Services.Repositories;
 using ECommerce.Application.Features.Order.Constants;
 using Uludag.Core.Mediation;
+using Uludag.Core.Security.JWT;
 
 namespace ECommerce.Application.Features.Order.Commands.Create
 {
     // Siparişi kalemleriyle birlikte tek seferde (tek SaveChanges) oluşturur.
     // Kalemlerdeki ürünlerden biri bulunamazsa NotFoundException, kural ihlalinde BusinessException fırlar.
-    // OrderDate ve fiyatlar istemciden alınmaz, sunucu belirler.
+    // OrderDate, fiyatlar ve siparişin sahibi (UserId) istemciden alınmaz, sunucu belirler.
+    // Sahip, isteğin Bearer token'ının oturumundan alınır (başkası adına sipariş verilemez).
     // Her kalemin adedi kadar ürün stoğundan düşülür; stok yetmezse sipariş oluşmaz.
-    public class CreateOrderCommand : IRequest, ISecuredRequest
+    public class CreateOrderCommand : IRequest
     {
         // Yetki: Order.Admin, Order.Write veya Order.Create claim'lerinden biri yeterli (global Admin her zaman geçer).
         // Açık (explicit) implementasyon: public property olmaz, JSON gövdesine / Swagger'a girmez.
-        string[] ISecuredRequest.Roles => [OrderOperationClaims.Admin, OrderOperationClaims.Write, OrderOperationClaims.Create];
+        
 
         // Siparişin para birimi. Kalemlerdeki tüm ürünler bu para biriminde olmalı.
         public string Currency { get; set; } = "TRY";
@@ -39,16 +42,22 @@ namespace ECommerce.Application.Features.Order.Commands.Create
             private readonly IProductService productService;
             private readonly OrderBusinessRules orderBusinessRules;
             private readonly OrderItemBusinessRules orderItemBusinessRules;
+            private readonly AuthBusinessRules authBusinessRules;
+            private readonly ITokenSessionAccessor tokenSessionAccessor; // "kim giriş yapmış" -> siparişin sahibi.
             public CreateOrderCommandHandler(
                 IOrderRepository orderRepository,
                 IProductService productService,
                 OrderBusinessRules orderBusinessRules,
-                OrderItemBusinessRules orderItemBusinessRules)
+                OrderItemBusinessRules orderItemBusinessRules,
+                AuthBusinessRules authBusinessRules,
+                ITokenSessionAccessor tokenSessionAccessor)
             {
                 this.orderRepository = orderRepository;
                 this.productService = productService;
                 this.orderBusinessRules = orderBusinessRules;
                 this.orderItemBusinessRules = orderItemBusinessRules;
+                this.authBusinessRules = authBusinessRules;
+                this.tokenSessionAccessor = tokenSessionAccessor;
             }
 
             // Orkestrasyon yapıyor mu?
@@ -56,6 +65,10 @@ namespace ECommerce.Application.Features.Order.Commands.Create
             // Mapper çağırıyor mu?
             public async Task Handle(CreateOrderCommand request, CancellationToken cancellationToken)
             {
+                // Siparişin sahibi: isteği yapan kullanıcı. Stok düşülmeden önce kontrol edilir.
+                TokenSession? tokenSession = await tokenSessionAccessor.GetCurrentTokenSessionAsync();
+                authBusinessRules.TokenSessionShouldExist(tokenSession);
+
                 orderBusinessRules.OrderShouldHaveAtLeastOneItem(request.Items); 
 
                 foreach (CreateOrderItemDto item in request.Items)
@@ -79,7 +92,10 @@ namespace ECommerce.Application.Features.Order.Commands.Create
                 foreach ((Guid productId, int amount) in requestedAmounts)
                     await productService.DecreaseStockAsync(products[productId], amount, cancellationToken);
 
-                Domain.Entities.Order order = OrderMapper.MapCreateCommandToOrder(request, products);
+                // IDOR - Broken Access Control
+                // Devre dışı 
+                // UserId gibi kimliğe bağlı alanlar -> Asla parametre değil tamamen oturumdan sunucu tarafında atanmalı.
+                Domain.Entities.Order order = OrderMapper.MapCreateCommandToOrder(request, products, tokenSession.UserId);
 
                 await orderRepository.AddAsync(order, cancellationToken);
             }

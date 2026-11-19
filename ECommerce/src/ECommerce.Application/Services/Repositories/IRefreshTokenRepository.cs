@@ -23,5 +23,11 @@ namespace ECommerce.Application.Services.Repositories
             Guid familyId,
             Domain.Entities.RefreshTokenRevocationReason reason,
             CancellationToken cancellationToken = default);
+
+        // Kullanıcının (tüm ailelerdeki) bütün aktif token'larını revoke eder; tek atomik SQL (ör. logout).
+        Task RevokeAllActiveByUserIdAsync(
+            Guid userId,
+            Domain.Entities.RefreshTokenRevocationReason reason,
+            CancellationToken cancellationToken = default);
     }
 }

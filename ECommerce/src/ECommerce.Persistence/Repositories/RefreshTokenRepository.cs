@@ -62,5 +62,21 @@ namespace ECommerce.Persistence.Repositories
                     .SetProperty(r => r.RevokedAt, now)
                     .SetProperty(r => r.RevocationReason, reason), cancellationToken);
         }
+
+        public async Task RevokeAllActiveByUserIdAsync(
+            Guid userId,
+            RefreshTokenRevocationReason reason,
+            CancellationToken cancellationToken = default)
+        {
+            DateTime now = DateTime.UtcNow;
+
+            // Tek SQL: UPDATE ... WHERE UserId = @userId AND RevokedAt IS NULL (UserId foreign key index'ini kullanır).
+            // Süresi dolmuş ama revoke edilmemiş token'lar da işaretlenir -> denetimde "neden kapandı" sorusu cevapsız kalmaz.
+            await uludagDbContext.RefreshTokens
+                .Where(r => r.UserId == userId && r.RevokedAt == null)
+                .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(r => r.RevokedAt, now)
+                    .SetProperty(r => r.RevocationReason, reason), cancellationToken);
+        }
     }
 }

@@ -10,6 +10,9 @@ namespace ECommerce.Domain.Entities
         RevokedByUser,
 
         // Revoke edilmiş bir token tekrar kullanıldı -> çalınmış sayıldı, ailesiyle birlikte iptal edildi.
-        ReuseDetected
+        ReuseDetected,
+
+        // Kullanıcı çıkış yaptı (logout) -> kullanıcının tüm aktif token'ları (bütün aileler / cihazlar) iptal edildi.
+        LoggedOut
     }
 }

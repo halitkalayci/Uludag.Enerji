@@ -28,6 +28,9 @@ namespace Microsoft.Extensions.DependencyInjection
             // AuthenticationBehavior, isteğin Authorization başlığını bununla okur.
             services.AddHttpContextAccessor();
 
+            // Handler'lar o anki isteğin oturumunu (kullanıcı id, e-posta, yetkiler) bununla alır (ör. logout).
+            services.AddSingleton<ITokenSessionAccessor, HttpContextTokenSessionAccessor>();
+
             return services;
         }
     }

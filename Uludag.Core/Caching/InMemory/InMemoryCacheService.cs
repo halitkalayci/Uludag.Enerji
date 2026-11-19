@@ -65,5 +65,44 @@ namespace Uludag.Core.Caching.InMemory
             memoryCache.Remove(key);
             return Task.CompletedTask;
         }
+
+        public Task RemoveAsync(IEnumerable<string> keys)
+        {
+            foreach (string key in keys)
+                memoryCache.Remove(key);
+            return Task.CompletedTask;
+        }
+
+        public Task AddToSetAsync(string key, string member, TimeSpan expiration)
+        {
+            // Oku-ekle-yaz atomik olmalı -> PopAllFromSetAsync ile aynı kilit.
+            lock (setLock)
+            {
+                bool exists = memoryCache.TryGetValue(key, out CacheEntry? entry) && entry is not null;
+                HashSet<string> members = exists ? JsonSerializer.Deserialize<HashSet<string>>(entry!.Json) ?? [] : [];
+                members.Add(member);
+
+                // Süre yalnızca uzatılır (Redis tarafıyla aynı).
+                DateTimeOffset requestedExpiresAt = DateTimeOffset.UtcNow.Add(expiration);
+                DateTimeOffset expiresAt = exists && entry!.ExpiresAt > requestedExpiresAt ? entry.ExpiresAt : requestedExpiresAt;
+
+                memoryCache.Set(key, new CacheEntry(JsonSerializer.Serialize(members), expiresAt), expiresAt);
+            }
+            return Task.CompletedTask;
+        }
+
+        public Task<IReadOnlyCollection<string>> PopAllFromSetAsync(string key)
+        {
+            lock (setLock)
+            {
+                IReadOnlyCollection<string> members = memoryCache.TryGetValue(key, out CacheEntry? entry) && entry is not null
+                    ? JsonSerializer.Deserialize<List<string>>(entry.Json) ?? []
+                    : [];
+                memoryCache.Remove(key);
+                return Task.FromResult(members);
+            }
+        }
+
+        private readonly object setLock = new();
     }
 }

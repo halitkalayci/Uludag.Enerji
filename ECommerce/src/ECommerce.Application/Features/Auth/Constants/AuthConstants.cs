@@ -15,5 +15,6 @@ namespace ECommerce.Application.Features.Auth.Constants
         public const string InvalidRefreshToken = "InvalidRefreshToken";
         public const string RefreshTokenExpired = "RefreshTokenExpired";
         public const string RefreshTokenReuseDetected = "RefreshTokenReuseDetected";
+        public const string InvalidTokenSession = "InvalidTokenSession";
     }
 }

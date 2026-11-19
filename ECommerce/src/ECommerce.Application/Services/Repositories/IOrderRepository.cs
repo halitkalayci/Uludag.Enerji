@@ -5,6 +5,8 @@ namespace ECommerce.Application.Services.Repositories
     public interface IOrderRepository
     {
         Task<List<Domain.Entities.Order>> GetAllAsync(CancellationToken cancellationToken = default);
+        // Yalnızca verilen kullanıcıya ait siparişler.
+        Task<List<Domain.Entities.Order>> GetAllByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
         Task<Domain.Entities.Order?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
         // Siparişi kalemleriyle (Items) birlikte getirir.
         Task<Domain.Entities.Order?> GetByIdWithItemsAsync(Guid id, CancellationToken cancellationToken = default);

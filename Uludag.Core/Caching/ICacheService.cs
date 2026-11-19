@@ -20,5 +20,17 @@ namespace Uludag.Core.Caching
         Task<long> IncrementAsync(string key, TimeSpan expiration);
 
         Task RemoveAsync(string key);
+
+        // Birden çok anahtarı tek seferde siler (Redis'te tek DEL komutu). Olmayan anahtarlar yok sayılır.
+        Task RemoveAsync(IEnumerable<string> keys);
+
+        // Küme (set): anahtara bir eleman ekler; küme yoksa oluşturulur. Aynı eleman iki kez eklenmez.
+        // Kümenin süresi en az expiration kadar olur: kalan süre daha kısaysa uzatılır, daha uzunsa kısaltılmaz.
+        // Ekleme + süre ayarı atomiktir. Küme anahtarı GetAsync / SetAsync ile okunmamalı / yazılmamalıdır.
+        Task AddToSetAsync(string key, string member, TimeSpan expiration);
+
+        // Kümenin tüm elemanlarını döner ve kümeyi siler; ikisi atomik (arada eklenen eleman kaybolmaz,
+        // ya bu çağrının sonucuna girer ya da yeni oluşan kümede kalır). Küme yoksa boş liste.
+        Task<IReadOnlyCollection<string>> PopAllFromSetAsync(string key);
     }
 }

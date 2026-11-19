@@ -2,7 +2,9 @@ using ECommerce.Application.Exceptions;
 using ECommerce.Application.Features.Auth.Constants;
 using ECommerce.Application.Services.Repositories;
 using System.Diagnostics.CodeAnalysis;
+using System.Security.Authentication;
 using Uludag.Core.Security.Hashing;
+using Uludag.Core.Security.JWT;
 using Uludag.Core.Security.MultiFactor;
 using Uludag.Core.Security.MultiFactor.Otp;
 
@@ -190,6 +192,18 @@ namespace ECommerce.Application.Features.Auth.Rules
         {
             if (!await refreshTokenRepository.TryRevokeActiveAsync(refreshTokenId, reason, replacedByTokenId, cancellationToken))
                 throw new BusinessException(AuthConstants.InvalidRefreshToken);
+        }
+
+        // ---- Logout ----
+
+        // İsteğin token oturumu olmalı -> yoksa 401.
+        // AuthenticationBehavior bunu zaten kontrol eder; bu kural, kontrolden sonra oturumun silindiği
+        // (ör. aynı anda gönderilmiş ikinci bir logout) durumu için.
+        // [NotNull]: Metot hata fırlatmadan dönerse derleyici tokenSession'ın artık null olmadığını bilir.
+        public void TokenSessionShouldExist([NotNull] TokenSession? tokenSession)
+        {
+            if (tokenSession is null)
+                throw new AuthenticationException(AuthConstants.InvalidTokenSession);
         }
     }
 }

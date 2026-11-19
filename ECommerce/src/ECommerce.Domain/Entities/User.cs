@@ -23,5 +23,8 @@ namespace ECommerce.Domain.Entities
 
         // Kullanıcının refresh token kayıtları (aktif + revoke edilmiş / süresi dolmuş).
         public virtual ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
+
+        // Kullanıcının siparişleri (User <-> Order bire-çok).
+        public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
     }
 }
