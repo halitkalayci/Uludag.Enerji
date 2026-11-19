@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.JsonWebTokens;
 using System.Security.Claims;
 using Uludag.Core.Caching.Redis;
+using Uludag.Core.RateLimiting;
 using Uludag.Core.Security.JWT;
 using Uludag.Core.Security.MultiFactor;
 
@@ -31,6 +32,14 @@ builder.Services.AddPersistenceServices();
 // Token oturumları (kullanıcı id, e-posta, yetkiler) burada saklanır.
 RedisOptions? redisOptions = builder.Configuration.GetSection("RedisOptions").Get<RedisOptions>();
 builder.Services.AddCacheService(redisOptions);
+
+// Rate limiting -> Uludag.Core (ILeakyBucketRateLimiter, Leaky Bucket algoritması).
+// İstemci IP'si başına bir kova: kapasite dolunca istek 429 ile reddedilir (bkz. LeakyBucketRateLimitingMiddleware).
+// Ayarlar appsettings'teki "RateLimitOptions" bölümünden okunur. Kovalar cache ile aynı yerde durur:
+// Redis ayarlıysa Redis'te (instance'lar arası paylaşılır), değilse bellekte. AddCacheService'ten sonra çağrılmalıdır.
+LeakyBucketOptions leakyBucketOptions = builder.Configuration.GetSection("RateLimitOptions").Get<LeakyBucketOptions>()
+    ?? throw new InvalidOperationException("appsettings'te 'RateLimitOptions' bölümü bulunamadı.");
+builder.Services.AddLeakyBucketRateLimiter(leakyBucketOptions, redisOptions);
 
 // JWT
 // Ayarlar appsettings'teki "TokenOptions" bölümünden okunur. SecurityKey repoda değil;
@@ -92,8 +101,12 @@ var app = builder.Build();
 AdminSeedOptions? adminSeedOptions = builder.Configuration.GetSection("AdminSeed").Get<AdminSeedOptions>();
 await app.Services.SeedAdminUserAsync(adminSeedOptions);
 
+// Leaky Bucket rate limiting -> kova doluysa 429. Muafiyet yok (Swagger / openapi dahil).
+// Pipeline'ın EN başında: reddedilen istek hiçbir iş (DB, token doğrulama vb.) yaptırmaz.
+app.UseMiddleware<LeakyBucketRateLimitingMiddleware>();
+
 // Rules sınıflarının fırlattığı BusinessException / NotFoundException -> 400 / 404.
-// Pipeline'ın en başında: sonraki tüm middleware'ler ve controller'lar bunun içinde çalışır.
+// Rate limiting'den hemen sonra: sonraki tüm middleware'ler ve controller'lar bunun içinde çalışır.
 app.UseMiddleware<BusinessExceptionMiddleware>();
 
 // Configure the HTTP request pipeline.
