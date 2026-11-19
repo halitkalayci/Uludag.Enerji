@@ -30,7 +30,8 @@ namespace Microsoft.Extensions.DependencyInjection
 
             services.AddSingleton(redisOptions);
             // Singleton: ConnectionMultiplexer pahalıdır ve thread-safe'dir; uygulama boyunca TEK bağlantı paylaşılır.
-            // İlk ihtiyaç duyulduğunda (ilk login / ilk istek) bağlanır.
+            // İlk ihtiyaç duyulduğunda bağlanır. Rate limiting middleware'i bunu kurucusunda istediği için
+            // pratikte uygulama açılışında bağlanır (Redis erişilemezse açılış en fazla connectTimeout kadar bekler).
             services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(configurationOptions));
             services.AddSingleton<ICacheService, RedisCacheService>();
 
