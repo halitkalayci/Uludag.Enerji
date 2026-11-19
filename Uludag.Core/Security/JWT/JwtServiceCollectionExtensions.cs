@@ -8,6 +8,7 @@ namespace Microsoft.Extensions.DependencyInjection
     {
         // TokenOptions'ı ve ITokenHelper -> JwtHelper eşleşmesini kaydeder.
         // Ayarlar eksik / hatalıysa uygulama ilk login'de değil, açılışta hata verir.
+        // JwtHelper token oturumlarını ICacheService'te tutar -> önce services.AddCacheService(...) çağrılmalıdır.
         public static IServiceCollection AddJwtHelper(this IServiceCollection services, TokenOptions tokenOptions)
         {
             ArgumentNullException.ThrowIfNull(services);
@@ -18,7 +19,7 @@ namespace Microsoft.Extensions.DependencyInjection
             if (tokenOptions.AccessTokenExpiration <= 0)
                 throw new ArgumentException("TokenOptions.AccessTokenExpiration sıfırdan büyük olmalıdır.", nameof(tokenOptions));
 
-            // Singleton: ayarlar uygulama boyunca değişmez, JwtHelper durum tutmaz.
+            // Singleton: ayarlar uygulama boyunca değişmez, JwtHelper durum tutmaz (oturumlar ICacheService'te, o da singleton).
             services.AddSingleton(tokenOptions);
             services.AddSingleton<ITokenHelper, JwtHelper>();
 

@@ -9,6 +9,7 @@ namespace Uludag.Core.Mediation.Behaviors
     //   - Bizim SecurityKey'imizle imzalanmış mı?
     //   - Issuer / Audience bizim mi?
     //   - Süresi geçmemiş mi?
+    //   - Token'daki oturum anahtarının (sid) cache'te (Redis) kaydı duruyor mu?
     // Hepsi doğruysa next(), değilse AuthenticationException (WebAPI'de 401'e çevrilir).
     // Giriş gerektirmeyen istekler (Login, Register) IAllowAnonymousRequest ile işaretlenir ve kontrol atlanır.
     // Kayıt: services.AddTransient(typeof(IPipelineBehavior<,>), typeof(AuthenticationBehavior<,>));

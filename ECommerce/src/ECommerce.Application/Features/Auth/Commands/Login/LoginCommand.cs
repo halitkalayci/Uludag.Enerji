@@ -2,12 +2,15 @@ using ECommerce.Application.Features.Auth.Mappers;
 using ECommerce.Application.Features.Auth.Rules;
 using ECommerce.Application.Services.Repositories;
 using Uludag.Core.Mediation;
-using Uludag.Core.Security.JWT;
+using Uludag.Core.Security.MultiFactor;
 
 namespace ECommerce.Application.Features.Auth.Commands.Login
 {
-    // Kullanıcı girişi. E-posta + şifre doğrulanır, başarılıysa JWT döner.
-    // Başarılı -> 200 + token, e-posta yok veya şifre yanlış -> BusinessException -> 400.
+    // Kullanıcı girişinin 1. adımı: e-posta + şifre doğrulanır. JWT DÖNMEZ.
+    // Başarılıysa kısa ömürlü bir MFA token'ı ve sıradaki adım döner (bkz. LoginResponse):
+    //   MFA kurulmamış (ilk giriş) -> SetupRequired : /api/auth/mfa/setup + /api/auth/mfa/verify
+    //   MFA kurulu                 -> CodeRequired  : /api/auth/mfa/verify
+    // E-posta yok veya şifre yanlış -> BusinessException -> 400.
     // IAllowAnonymousRequest -> token almak için giriş yapılır; AuthenticationBehavior bu isteği kontrol etmez.
     public class LoginCommand : IRequest<LoginResponse>, IAllowAnonymousRequest
     {
@@ -18,19 +21,19 @@ namespace ECommerce.Application.Features.Auth.Commands.Login
         {
             // Dependency Injection
             private readonly IUserRepository userRepository;
+            private readonly IOtpAuthenticatorRepository otpAuthenticatorRepository;
             private readonly AuthBusinessRules authBusinessRules;
-            private readonly ITokenHelper tokenHelper; // Uludag.Core -> token'ın nasıl üretildiğini handler bilmez.
-            private readonly IUserOperationClaimRepository userOperationClaimRepository;
+            private readonly IMultiFactorSessionHelper multiFactorSessionHelper; // Uludag.Core -> MFA oturumunun nerede tutulduğunu (Redis) handler bilmez.
             public LoginCommandHandler(
                 IUserRepository userRepository,
+                IOtpAuthenticatorRepository otpAuthenticatorRepository,
                 AuthBusinessRules authBusinessRules,
-                ITokenHelper tokenHelper,
-                IUserOperationClaimRepository userOperationClaimRepository)
+                IMultiFactorSessionHelper multiFactorSessionHelper)
             {
                 this.userRepository = userRepository;
+                this.otpAuthenticatorRepository = otpAuthenticatorRepository;
                 this.authBusinessRules = authBusinessRules;
-                this.tokenHelper = tokenHelper;
-                this.userOperationClaimRepository = userOperationClaimRepository;
+                this.multiFactorSessionHelper = multiFactorSessionHelper;
             }
 
             public async Task<LoginResponse> Handle(LoginCommand request, CancellationToken cancellationToken)
@@ -42,15 +45,14 @@ namespace ECommerce.Application.Features.Auth.Commands.Login
                 authBusinessRules.UserShouldExistWhenLoggingIn(user, request.Password);
                 authBusinessRules.PasswordShouldMatch(user, request.Password);
 
-                // Yetkiler -> token'a yazılır; AuthorizationBehavior her istekte bunları okur.
-                // Claim değişikliği bir sonraki login'de yansır.
-                List<string> operationClaims = await userOperationClaimRepository.GetOperationClaimNamesByUserIdAsync(user.Id, cancellationToken);
+                // MFA aktif mi? -> yalnızca sıradaki adımı (kurulum mu, kod mu) belirler; iki durumda da JWT verilmez.
+                bool isMultiFactorEnabled = await otpAuthenticatorRepository.IsVerifiedAsync(user.Id, cancellationToken);
 
-                // Token
-                AccessToken accessToken = tokenHelper.CreateToken(user.Id, user.Email, operationClaims);
+                // Şifre doğru -> MFA oturumu (Redis). Token yalnızca MFA isteklerinde geçerlidir, hiçbir API'ye yetki vermez.
+                MultiFactorSession multiFactorSession = await multiFactorSessionHelper.CreateSessionAsync(user.Id);
 
                 // Mapping
-                return UserMapper.MapAccessTokenToLoginResponse(accessToken);
+                return UserMapper.MapMultiFactorSessionToLoginResponse(multiFactorSession, isMultiFactorEnabled);
             }
         }
     }

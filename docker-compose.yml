@@ -54,7 +54,46 @@ services:
       retries: 10
       start_period: 20s
 
+  redis:
+    image: redis:8-alpine
+    container_name: uludag-redis
+    restart: unless-stopped
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis}
+    # Şifre ortam değişkeninden okunur; --appendonly -> veriler container yeniden başlayınca kaybolmaz.
+    command: ["sh", "-c", "exec redis-server --requirepass \"$${REDIS_PASSWORD}\" --appendonly yes"]
+    ports:
+      - "127.0.0.1:${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$${REDIS_PASSWORD}\" --no-auth-warning ping | grep -q PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis web arayüzü -> http://localhost:5540
+  # RI_REDIS_* -> "uludag-redis" bağlantısı arayüzde hazır gelir, elle eklemeye gerek yok.
+  redisinsight:
+    image: redis/redisinsight:latest
+    container_name: uludag-redisinsight
+    restart: unless-stopped
+    environment:
+      RI_REDIS_HOST: redis
+      RI_REDIS_PORT: "6379"
+      RI_REDIS_ALIAS: uludag-redis
+      RI_REDIS_PASSWORD: ${REDIS_PASSWORD:-redis}
+    ports:
+      - "127.0.0.1:${REDISINSIGHT_PORT:-5540}:5540"
+    volumes:
+      - redisinsight-data:/data
+    depends_on:
+      redis:
+        condition: service_healthy
+
 volumes:
   postgres-data:
   pgadmin-data:
   mssql-data:
+  redis-data:
+  redisinsight-data:

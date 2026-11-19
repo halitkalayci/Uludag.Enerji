@@ -17,5 +17,8 @@ namespace ECommerce.Domain.Entities
         // Navigation Properties
         // Kullanıcının yetkileri (User <-> OperationClaim çoka-çok, ara tablo: UserOperationClaim).
         public virtual ICollection<UserOperationClaim> UserOperationClaims { get; set; } = new List<UserOperationClaim>();
+
+        // Authenticator (TOTP) kaydı. null -> MFA hiç kurulmamış.
+        public virtual OtpAuthenticator? OtpAuthenticator { get; set; }
     }
 }

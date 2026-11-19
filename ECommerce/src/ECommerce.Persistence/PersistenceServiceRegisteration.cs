@@ -21,6 +21,8 @@ namespace ECommerce.Persistence
             services.AddScoped<IOrderItemRepository, OrderItemRepository>();
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IUserOperationClaimRepository, UserOperationClaimRepository>();
+            services.AddScoped<IOperationClaimRepository, OperationClaimRepository>();
+            services.AddScoped<IOtpAuthenticatorRepository, OtpAuthenticatorRepository>();
 
             return services;
         }

@@ -3,7 +3,11 @@ using ECommerce.Persistence;
 using ECommerce.Persistence.Seeds;
 using ECommerce.WebAPI.Middlewares;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.JsonWebTokens;
+using System.Security.Claims;
+using Uludag.Core.Caching.Redis;
 using Uludag.Core.Security.JWT;
+using Uludag.Core.Security.MultiFactor;
 
 
 // Entrypoint -> Giriş noktası..
@@ -22,6 +26,12 @@ builder.Services.AddApplicationServices();
 // Başka bir katman adına karar vermemeli.
 builder.Services.AddPersistenceServices();
 
+// Cache -> Uludag.Core (ICacheService).
+// "RedisOptions:ConnectionString" doluysa Redis (docker-compose), boşsa / yoksa in-memory.
+// Token oturumları (kullanıcı id, e-posta, yetkiler) burada saklanır.
+RedisOptions? redisOptions = builder.Configuration.GetSection("RedisOptions").Get<RedisOptions>();
+builder.Services.AddCacheService(redisOptions);
+
 // JWT
 // Ayarlar appsettings'teki "TokenOptions" bölümünden okunur. SecurityKey repoda değil;
 // Development'ta appsettings.Development.json, diğer ortamlarda TokenOptions__SecurityKey ortam değişkeni.
@@ -31,6 +41,13 @@ TokenOptions tokenOptions = builder.Configuration.GetSection("TokenOptions").Get
 // Token üretimi -> Uludag.Core (ITokenHelper -> JwtHelper).
 builder.Services.AddJwtHelper(tokenOptions);
 
+// Multi-Factor Authentication -> Uludag.Core (IOtpAuthenticatorHelper -> OtpNet, IMultiFactorSessionHelper -> cache).
+// Login JWT yerine kısa ömürlü bir MFA token'ı döner; JWT authenticator kodu doğrulanınca verilir.
+// Ayarlar appsettings'teki "MultiFactorOptions" bölümünden okunur. MFA oturumları da ICacheService'te tutulur.
+MultiFactorOptions multiFactorOptions = builder.Configuration.GetSection("MultiFactorOptions").Get<MultiFactorOptions>()
+    ?? throw new InvalidOperationException("appsettings'te 'MultiFactorOptions' bölümü bulunamadı.");
+builder.Services.AddMultiFactorAuthentication(multiFactorOptions);
+
 // Token doğrulama -> gelen isteklerdeki "Authorization: Bearer <token>" başlığını kontrol eder.
 // Üretimle aynı TokenOptions + aynı SecurityKeyHelper kullanılır.
 builder.Services
@@ -39,6 +56,26 @@ builder.Services
     {
         // AuthenticationBehavior ile aynı kurallar (Uludag.Core).
         options.TokenValidationParameters = TokenValidationParametersHelper.Create(tokenOptions);
+
+        // Token yalnızca oturum anahtarı taşır. İmza doğrulandıktan sonra kullanıcı bilgileri Redis'ten alınır
+        // ve HttpContext.User bunlarla kurulur. Oturum yoksa (süresi dolmuş / silinmiş) istek doğrulanmamış sayılır.
+        options.Events = new JwtBearerEvents
+        {
+            OnTokenValidated = async context =>
+            {
+                ITokenHelper tokenHelper = context.HttpContext.RequestServices.GetRequiredService<ITokenHelper>();
+                string token = ((JsonWebToken)context.SecurityToken).EncodedToken;
+
+                TokenSession? tokenSession = await tokenHelper.GetTokenSessionAsync(token);
+                if (tokenSession is null)
+                {
+                    context.Fail("Token oturumu bulunamadı.");
+                    return;
+                }
+
+                context.Principal = new ClaimsPrincipal(new ClaimsIdentity(tokenSession.ToClaims(), context.Scheme.Name));
+            }
+        };
     });
 
 // caching

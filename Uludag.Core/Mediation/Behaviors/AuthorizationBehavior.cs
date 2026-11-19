@@ -7,7 +7,8 @@ namespace Uludag.Core.Mediation.Behaviors
 {
     // Kimlik doğrulandıktan sonra (AuthenticationBehavior) "bu kullanıcı bu işlemi yapabilir mi?" sorusunu cevaplar.
     // Yalnızca ISecuredRequest istekleri kontrol edilir; diğerleri doğrudan geçer.
-    // Kural: kullanıcının token'ındaki claim'lerden biri
+    // Claim'ler token'ın içinden değil, token'ın işaret ettiği cache (Redis) oturumundan okunur.
+    // Kural: kullanıcının oturumundaki claim'lerden biri
     //   - "Admin" ise (global yönetici) veya
     //   - isteğin Roles listesinde birebir (metinsel, büyük/küçük harf duyarlı) varsa
     // istek geçer; yoksa AuthorizationException (WebAPI'de 403'e çevrilir).
@@ -34,7 +35,7 @@ namespace Uludag.Core.Mediation.Behaviors
             if (request is not ISecuredRequest securedRequest)
                 return await next();
 
-            // Token yoksa / geçersizse claim listesi boş gelir -> yetki yok.
+            // Token yoksa / geçersizse / oturumu yoksa claim listesi boş gelir -> yetki yok.
             string? token = httpContextAccessor.HttpContext.GetBearerToken();
             IReadOnlyCollection<string> userClaims = token is null
                 ? []

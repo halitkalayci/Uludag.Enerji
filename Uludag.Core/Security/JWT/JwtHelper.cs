@@ -1,26 +1,57 @@
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
+using Uludag.Core.Caching;
 
 namespace Uludag.Core.Security.JWT
 {
     // ITokenHelper'ın JWT ile yazılmış hali.
     // İmza: HmacSha256 (simetrik) -> aynı SecurityKey ile hem imzalanır hem doğrulanır.
+    //
+    // Token içeriği bilerek boş tutulur: yalnızca "sid" (oturum anahtarı) + standart iss / aud / exp / iat / nbf.
+    // Kullanıcı bilgileri ICacheService'te (Redis) iki anahtarda durur:
+    //   token-session:{sid}             -> UserId, Email, Expiration. Her login'de yeni bir tane; TTL = token süresi.
+    //   user-operation-claims:{userId}  -> Yetki adları. Kullanıcı başına TEK kayıt; tüm oturumları bunu okur.
+    // Yetkiler oturuma kopyalanmadığı için, bu tek kayıt güncellenince (RefreshOperationClaimsAsync)
+    // kullanıcının bütün açık token'ları bir sonraki istekte yeni yetkilerle çalışır.
     public class JwtHelper : ITokenHelper
     {
+        // JWT'de oturum anahtarını taşıyan claim.
+        public const string SessionKeyClaimType = JwtRegisteredClaimNames.Sid;
+
+        private const string SessionCacheKeyPrefix = "token-session:";
+        private const string OperationClaimsCacheKeyPrefix = "user-operation-claims:";
+
+        // Cache'teki oturum kaydı. Yetkiler burada değil, kullanıcının ortak kaydında durur.
+        private sealed record StoredTokenSession(Guid UserId, string Email, DateTime Expiration);
+
         private readonly TokenOptions tokenOptions;
+        private readonly ICacheService cacheService;
         private readonly JsonWebTokenHandler tokenHandler = new();
         private readonly TokenValidationParameters validationParameters;
-        public JwtHelper(TokenOptions tokenOptions)
+        public JwtHelper(TokenOptions tokenOptions, ICacheService cacheService)
         {
             this.tokenOptions = tokenOptions;
+            this.cacheService = cacheService;
             validationParameters = TokenValidationParametersHelper.Create(tokenOptions);
         }
 
-        public AccessToken CreateToken(Guid userId, string email, IEnumerable<string> operationClaims)
+        public async Task<AccessToken> CreateTokenAsync(Guid userId, string email, IEnumerable<string> operationClaims)
         {
             DateTime now = DateTime.UtcNow;
             DateTime expiration = now.AddMinutes(tokenOptions.AccessTokenExpiration);
+            TimeSpan lifetime = expiration - now;
+
+            // Tahmin edilemez anahtar (Guid v4 -> 122 bit rastgele). Token imzalı olduğundan dışarıdan da değiştirilemez.
+            string sessionKey = Guid.NewGuid().ToString("N");
+
+            // Yetkiler DB'den yeni okunmuş, en güncel hal -> kullanıcının ortak kaydının üzerine yazılır.
+            // TTL en son açılan oturumun süresi kadar: tüm token'lar aynı süreyle üretildiği için en son biten oturum budur,
+            // yani ortak kayıt hiçbir aktif oturumdan önce silinmez.
+            await cacheService.SetAsync(BuildOperationClaimsCacheKey(userId), operationClaims.ToList(), lifetime);
+
+            // Önce cache yazılır: token istemciye ulaştığında oturum kesinlikle hazırdır.
+            await cacheService.SetAsync(BuildSessionCacheKey(sessionKey), new StoredTokenSession(userId, email, expiration), lifetime);
 
             SecurityTokenDescriptor tokenDescriptor = new()
             {
@@ -29,16 +60,8 @@ namespace Uludag.Core.Security.JWT
                 IssuedAt = now,
                 NotBefore = now,
                 Expires = expiration,
-                // Claim -> token'ın içinde taşınan bilgi. Şifre, hash gibi gizli veriler ASLA eklenmez
-                // (JWT şifreli değil, imzalıdır: içeriği herkes okuyabilir, ama değiştiremez).
-                Subject = new ClaimsIdentity(
-                [
-                    new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
-                    new Claim(JwtRegisteredClaimNames.Email, email),
-                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()), // Her token'a özel kimlik.
-                    // Yetkiler: her operation claim ayrı bir rol claim'i (ör. "Product.Read").
-                    .. operationClaims.Select(operationClaim => new Claim(ClaimTypes.Role, operationClaim))
-                ]),
+                // Yalnızca anahtar. E-posta, roller vb. token'a yazılmaz (JWT şifreli değil, imzalıdır: içeriği herkes okuyabilir).
+                Subject = new ClaimsIdentity([new Claim(SessionKeyClaimType, sessionKey)]),
                 SigningCredentials = new SigningCredentials(
                     SecurityKeyHelper.CreateSecurityKey(tokenOptions.SecurityKey),
                     SecurityAlgorithms.HmacSha256)
@@ -53,22 +76,54 @@ namespace Uludag.Core.Security.JWT
 
         public async Task<bool> ValidateTokenAsync(string token)
         {
-            // İmza, issuer, audience ve süre kontrolü. Hata fırlatmaz; sonucu IsValid ile döner.
+            return await GetTokenSessionAsync(token) is not null;
+        }
+
+        public async Task<TokenSession?> GetTokenSessionAsync(string token)
+        {
+            // Doğrulanmamış token'a güvenilmez: önce imza / issuer / audience / süre kontrolü, sonra cache.
+            // ValidateTokenAsync hata fırlatmaz; sonucu IsValid ile döner.
             TokenValidationResult result = await tokenHandler.ValidateTokenAsync(token, validationParameters);
-            return result.IsValid;
+            if (!result.IsValid)
+                return null;
+
+            string? sessionKey = result.ClaimsIdentity.FindFirst(SessionKeyClaimType)?.Value;
+            if (string.IsNullOrEmpty(sessionKey))
+                return null;
+
+            // Oturum yoksa (süresi dolmuş / silinmiş) token geçersizdir.
+            StoredTokenSession? storedSession = await cacheService.GetAsync<StoredTokenSession>(BuildSessionCacheKey(sessionKey));
+            if (storedSession is null)
+                return null;
+
+            // Yetkiler her istekte kullanıcının ortak kaydından okunur -> atama / kaldırma anında yansır.
+            // Kayıt yoksa yetki yok sayılır (güvenli taraf: 403, asla fazladan yetki değil).
+            List<string> operationClaims = await cacheService.GetAsync<List<string>>(BuildOperationClaimsCacheKey(storedSession.UserId)) ?? [];
+
+            return new TokenSession
+            {
+                UserId = storedSession.UserId,
+                Email = storedSession.Email,
+                OperationClaims = operationClaims,
+                Expiration = storedSession.Expiration
+            };
         }
 
         public async Task<IReadOnlyCollection<string>> GetOperationClaimsAsync(string token)
         {
-            // Doğrulanmamış token'ın içeriğine güvenilmez: önce imza / süre kontrolü, sonra claim'ler.
-            TokenValidationResult result = await tokenHandler.ValidateTokenAsync(token, validationParameters);
-            if (!result.IsValid)
-                return [];
-
-            return result.ClaimsIdentity
-                .FindAll(ClaimTypes.Role)
-                .Select(claim => claim.Value)
-                .ToArray();
+            TokenSession? tokenSession = await GetTokenSessionAsync(token);
+            return tokenSession?.OperationClaims ?? [];
         }
+
+        public async Task RefreshOperationClaimsAsync(Guid userId, IEnumerable<string> operationClaims)
+        {
+            // Yalnızca kayıt varsa (kullanıcının aktif oturumu varsa) ve kalan süresine dokunmadan güncellenir.
+            // Oturumu olmayan kullanıcı için kayıt açılmaz; yetkiler bir sonraki login'de zaten yazılır.
+            await cacheService.SetIfExistsAsync(BuildOperationClaimsCacheKey(userId), operationClaims.ToList());
+        }
+
+        private static string BuildSessionCacheKey(string sessionKey) => SessionCacheKeyPrefix + sessionKey;
+
+        private static string BuildOperationClaimsCacheKey(Guid userId) => OperationClaimsCacheKeyPrefix + userId;
     }
 }

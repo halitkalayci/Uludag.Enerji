@@ -3,6 +3,8 @@ using ECommerce.Application.Features.Auth.Constants;
 using ECommerce.Application.Services.Repositories;
 using System.Diagnostics.CodeAnalysis;
 using Uludag.Core.Security.Hashing;
+using Uludag.Core.Security.MultiFactor;
+using Uludag.Core.Security.MultiFactor.Otp;
 
 namespace ECommerce.Application.Features.Auth.Rules
 {
@@ -13,9 +15,46 @@ namespace ECommerce.Application.Features.Auth.Rules
     public class AuthBusinessRules : BaseBusinessRules
     {
         private readonly IUserRepository userRepository;
-        public AuthBusinessRules(IUserRepository userRepository)
+        private readonly IUserOperationClaimRepository userOperationClaimRepository;
+        private readonly IOtpAuthenticatorRepository otpAuthenticatorRepository;
+        private readonly IOtpAuthenticatorHelper otpAuthenticatorHelper; // Uludag.Core -> kodun nasıl doğrulandığını (OtpNet) kural bilmez.
+        private readonly IMultiFactorSessionHelper multiFactorSessionHelper;
+        public AuthBusinessRules(
+            IUserRepository userRepository,
+            IUserOperationClaimRepository userOperationClaimRepository,
+            IOtpAuthenticatorRepository otpAuthenticatorRepository,
+            IOtpAuthenticatorHelper otpAuthenticatorHelper,
+            IMultiFactorSessionHelper multiFactorSessionHelper)
         {
             this.userRepository = userRepository;
+            this.userOperationClaimRepository = userOperationClaimRepository;
+            this.otpAuthenticatorRepository = otpAuthenticatorRepository;
+            this.otpAuthenticatorHelper = otpAuthenticatorHelper;
+            this.multiFactorSessionHelper = multiFactorSessionHelper;
+        }
+
+        // Rol atanacak kullanıcı var olmalı -> yoksa 404.
+        public async Task UserShouldExist(Guid userId, CancellationToken cancellationToken = default)
+        {
+            Domain.Entities.User? user = await userRepository.GetByIdAsync(userId, cancellationToken);
+            if (user is null)
+                throw new NotFoundException(AuthConstants.UserNotFound);
+        }
+
+        // Atanacak claim sistemde tanımlı olmalı -> yoksa 404.
+        // [NotNull]: Metot hata fırlatmadan dönerse derleyici operationClaim'in artık null olmadığını bilir.
+        public void OperationClaimShouldExist([NotNull] Domain.Entities.OperationClaim? operationClaim)
+        {
+            if (operationClaim is null)
+                throw new NotFoundException(AuthConstants.OperationClaimNotFound);
+        }
+
+        // Aynı claim bir kullanıcıya iki kez atanamaz -> 400.
+        // (Veritabanındaki unique index de bunu engeller; bu kural kullanıcıya anlamlı mesaj vermek için.)
+        public async Task UserCannotHaveOperationClaim(Guid userId, Guid operationClaimId, CancellationToken cancellationToken = default)
+        {
+            if (await userOperationClaimRepository.AnyAsync(userId, operationClaimId, cancellationToken))
+                throw new BusinessException(AuthConstants.UserAlreadyHasOperationClaim);
         }
 
         // Aynı e-posta ile ikinci bir kullanıcı kaydedilemez. -> Sisteme (DB'ye) bakmak gerekiyor, iş kuralı.
@@ -56,6 +95,53 @@ namespace ECommerce.Application.Features.Auth.Rules
         {
             if (!HashingHelper.VerifyPasswordHash(password, user.PasswordHash, user.PasswordSalt))
                 throw new BusinessException(AuthConstants.InvalidEmailOrPassword);
+        }
+
+        // ---- Multi-Factor Authentication (OTP) ----
+
+        // MFA token'ı login'de verilir ve kısa ömürlüdür. Yanlış / süresi dolmuş / kullanılmışsa -> 400, yeniden login.
+        // [NotNull]: Metot hata fırlatmadan dönerse derleyici session'ın artık null olmadığını bilir.
+        public void MultiFactorSessionShouldExist([NotNull] MultiFactorSession? session)
+        {
+            if (session is null)
+                throw new BusinessException(AuthConstants.InvalidMultiFactorToken);
+        }
+
+        // Oturumdaki kullanıcı bu arada silinmiş olabilir -> 404.
+        public void UserShouldExistWhenSelected([NotNull] Domain.Entities.User? user)
+        {
+            if (user is null)
+                throw new NotFoundException(AuthConstants.UserNotFound);
+        }
+
+        // MFA'sı aktif kullanıcı için yeniden kurulum (yeni gizli anahtar) yapılamaz -> 400.
+        // Aksi halde şifreyi ele geçiren biri kendi telefonunu ekleyip MFA'yı devre dışı bırakabilirdi.
+        public async Task MultiFactorCannotBeEnabled(Guid userId, CancellationToken cancellationToken = default)
+        {
+            if (await otpAuthenticatorRepository.IsVerifiedAsync(userId, cancellationToken))
+                throw new BusinessException(AuthConstants.MultiFactorAlreadyEnabled);
+        }
+
+        // Kod doğrulamadan önce kurulum başlatılmış olmalı (gizli anahtar üretilmiş) -> yoksa 400.
+        public void OtpAuthenticatorShouldExist([NotNull] Domain.Entities.OtpAuthenticator? otpAuthenticator)
+        {
+            if (otpAuthenticator is null)
+                throw new BusinessException(AuthConstants.OtpAuthenticatorNotSetUp);
+        }
+
+        // Kaba kuvvet koruması: her doğrulama denemesi bir hak harcar (kod doğru olsa da).
+        // Kod kontrolünden ÖNCE çağrılmalı; sayaç atomik olduğu için aynı anda gönderilen istekler de sınırı aşamaz.
+        public async Task VerificationAttemptShouldBeAllowed(Guid userId)
+        {
+            if (!await multiFactorSessionHelper.TryConsumeVerificationAttemptAsync(userId))
+                throw new BusinessException(AuthConstants.TooManyAuthenticatorAttempts);
+        }
+
+        // Kod, authenticator uygulamasının şu an ürettiği kodla eşleşmeli -> değilse 400.
+        public void AuthenticatorCodeShouldBeValid(byte[] secretKey, string authenticatorCode)
+        {
+            if (!otpAuthenticatorHelper.VerifyCode(secretKey, authenticatorCode))
+                throw new BusinessException(AuthConstants.InvalidAuthenticatorCode);
         }
     }
 }

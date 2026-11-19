@@ -24,6 +24,7 @@ namespace ECommerce.Persistence.Contexts
         public DbSet<User> Users => Set<User>();
         public DbSet<OperationClaim> OperationClaims => Set<OperationClaim>();
         public DbSet<UserOperationClaim> UserOperationClaims => Set<UserOperationClaim>();
+        public DbSet<OtpAuthenticator> OtpAuthenticators => Set<OtpAuthenticator>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

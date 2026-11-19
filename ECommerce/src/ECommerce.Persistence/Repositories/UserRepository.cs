@@ -21,6 +21,13 @@ namespace ECommerce.Persistence.Repositories
                 .FirstOrDefaultAsync(u => u.Email == email, cancellationToken);
         }
 
+        public async Task<User?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+        {
+            return await uludagDbContext.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
+        }
+
         public async Task AddAsync(User user, CancellationToken cancellationToken = default)
         {
             await uludagDbContext.Users.AddAsync(user, cancellationToken);
