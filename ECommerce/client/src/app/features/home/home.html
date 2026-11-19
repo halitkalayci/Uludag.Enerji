@@ -1,0 +1,140 @@
+<section class="hero">
+  <div class="container hero__inner">
+    <div class="hero__copy">
+      <span class="eyebrow">Zirveden taze ürünler</span>
+      <h1>Dağ havasında, <em>özenle seçilmiş</em> ürünler.</h1>
+      <p>Uludağ Market'te stoktaki her ürünü anında görün, sepetinize ekleyin ve siparişinizi
+        iki adımlı doğrulamayla güvenle verin.</p>
+      <div class="row">
+        <a href="#urunler" class="btn btn--primary btn--lg">Ürünleri keşfet <app-icon name="arrowRight" [size]="18" /></a>
+        @if (!auth.isAuthenticated()) {
+          <a routerLink="/register" class="btn btn--lg">Hesap oluştur</a>
+        } @else {
+          <a routerLink="/orders" class="btn btn--lg">Siparişlerim</a>
+        }
+      </div>
+    </div>
+
+    @if (!auth.isAuthenticated()) {
+      <div class="hero__stats">
+        <div class="stat stat--accent">
+          <app-icon name="shield" [size]="22" />
+          <span>Authenticator ile iki adımlı giriş</span>
+        </div>
+        <div class="stat">
+          <app-icon name="box" [size]="22" />
+          <span>Anlık stok bilgisi</span>
+        </div>
+        <div class="stat">
+          <app-icon name="refresh" [size]="22" />
+          <span>Kendini yenileyen güvenli oturum</span>
+        </div>
+        <div class="stat">
+          <app-icon name="receipt" [size]="22" />
+          <span>Siparişlerinizi tek yerden yönetin</span>
+        </div>
+      </div>
+    } @else {
+    <div class="hero__stats">
+      <div class="stat">
+        <strong>{{ stats().total }}</strong>
+        <span>ürün çeşidi</span>
+      </div>
+      <div class="stat">
+        <strong>{{ stats().inStock }}</strong>
+        <span>stokta</span>
+      </div>
+      <div class="stat">
+        <strong>{{ stats().units }}</strong>
+        <span>toplam adet</span>
+      </div>
+      <div class="stat stat--accent">
+        <app-icon name="shield" [size]="22" />
+        <span>MFA korumalı hesaplar</span>
+      </div>
+    </div>
+    }
+  </div>
+
+  <svg class="hero__mountains" viewBox="0 0 1440 220" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M0 220V150l140-70 110 50 170-110 150 95 120-55 190 100 160-80 150 70 120-40 130 60v50Z" fill="#e2ece6" />
+    <path d="M0 220v-40l180-60 140 45 200-85 170 80 160-40 190 70 170-55 230 65v20Z" fill="#cfe0d6" />
+    <path d="M0 220v-18l240-36 220 28 260-44 240 36 230-30 250 40v24Z" fill="#f6f5f0" />
+  </svg>
+</section>
+
+<section class="container catalog" id="urunler">
+  <div class="catalog__head">
+    <div>
+      <h2>Tüm ürünler</h2>
+      <p class="muted">{{ visible().length }} ürün listeleniyor</p>
+    </div>
+
+    <div class="toolbar">
+      <label class="search">
+        <app-icon name="search" [size]="18" />
+        <input type="search" placeholder="Ürün ara…" [value]="query()" (input)="onSearch($event)" />
+      </label>
+      <select class="select" [value]="sort()" (change)="onSort($event)" aria-label="Sırala">
+        <option value="name">İsme göre</option>
+        <option value="price-asc">Fiyat (artan)</option>
+        <option value="price-desc">Fiyat (azalan)</option>
+        <option value="stock">Stok miktarı</option>
+      </select>
+      <label class="toggle">
+        <input type="checkbox" [checked]="inStockOnly()" (change)="inStockOnly.set(!inStockOnly())" />
+        <span>Yalnızca stoktakiler</span>
+      </label>
+      <button type="button" class="btn btn--ghost btn--icon" (click)="load(true)" [disabled]="loading()"
+              aria-label="Yenile" title="Yenile">
+        <app-icon name="refresh" [size]="18" />
+      </button>
+    </div>
+  </div>
+
+  @if (!auth.isAuthenticated()) {
+    <div class="card empty locked">
+      <div class="empty__icon"><app-icon name="lock" /></div>
+      <h3>Ürünleri görmek için giriş yapın</h3>
+      <p>Katalog yalnızca üyelere açık. Giriş yapın ya da birkaç saniyede hesap oluşturun.</p>
+      <div class="row" style="justify-content: center">
+        <a routerLink="/login" class="btn btn--primary">Giriş yap</a>
+        <a routerLink="/register" class="btn">Kayıt ol</a>
+      </div>
+    </div>
+  } @else if (error()) {
+    <div class="card empty">
+      <div class="empty__icon"><app-icon name="info" /></div>
+      <h3>Ürünler yüklenemedi</h3>
+      <p>{{ error() }}</p>
+      <button type="button" class="btn btn--primary" (click)="load(true)">Tekrar dene</button>
+    </div>
+  } @else if (loading() && stats().total === 0) {
+    <div class="grid">
+      @for (i of [1, 2, 3, 4, 5, 6, 7, 8]; track i) {
+        <div class="skeleton" style="height: 300px; border-radius: var(--radius-lg)"></div>
+      }
+    </div>
+  } @else if (visible().length === 0) {
+    <div class="card empty">
+      <div class="empty__icon"><app-icon name="box" /></div>
+      @if (stats().total === 0) {
+        <h3>Henüz ürün yok</h3>
+        <p>Yetkili bir hesapla ürün yönetimi sayfasından ilk ürünü ekleyebilirsiniz.</p>
+        @if (auth.isAuthenticated()) {
+          <a routerLink="/admin/products" class="btn btn--primary">Ürün ekle</a>
+        }
+      } @else {
+        <h3>Eşleşen ürün bulunamadı</h3>
+        <p>Arama ya da filtreleri değiştirmeyi deneyin.</p>
+        <button type="button" class="btn" (click)="resetFilters()">Filtreleri temizle</button>
+      }
+    </div>
+  } @else {
+    <div class="grid">
+      @for (product of visible(); track product.id) {
+        <app-product-card [product]="product" />
+      }
+    </div>
+  }
+</section>

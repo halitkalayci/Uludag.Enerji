@@ -1,0 +1,77 @@
+<header class="topbar">
+  <div class="container topbar__inner">
+    <a routerLink="/" class="brand" aria-label="Uludağ Market ana sayfa">
+      <span class="brand__mark"><app-icon name="mountain" [size]="20" /></span>
+      <span class="brand__name">Uludağ<span>Market</span></span>
+    </a>
+
+    <nav class="nav" [class.nav--open]="menuOpen()">
+      <a routerLink="/" routerLinkActive="is-active" [routerLinkActiveOptions]="{ exact: true }">Ürünler</a>
+      @if (auth.isAuthenticated()) {
+        <a routerLink="/orders" routerLinkActive="is-active">Siparişler</a>
+        <a routerLink="/admin/products" routerLinkActive="is-active">Ürün yönetimi</a>
+        <a routerLink="/admin/claims" routerLinkActive="is-active">Yetkiler</a>
+      }
+    </nav>
+
+    <div class="actions">
+      <a routerLink="/cart" class="cart-btn" aria-label="Sepet">
+        <app-icon name="cart" [size]="20" />
+        @if (cart.count() > 0) {
+          <span class="cart-btn__count">{{ cart.count() }}</span>
+        }
+      </a>
+
+      @if (auth.isAuthenticated()) {
+        <div class="account">
+          <button type="button" class="account__trigger" (click)="accountOpen.set(!accountOpen())"
+                  [attr.aria-expanded]="accountOpen()">
+            <span class="avatar">{{ initial(auth.email()) }}</span>
+            <span class="account__email">{{ auth.email() }}</span>
+          </button>
+          @if (accountOpen()) {
+            <div class="account__menu" role="menu">
+              <div class="account__head">
+                <span class="small muted">Giriş yapıldı</span>
+                <strong>{{ auth.email() }}</strong>
+              </div>
+              <a routerLink="/account" role="menuitem"><app-icon name="user" [size]="16" /> Hesabım ve oturum</a>
+              <a routerLink="/orders" role="menuitem"><app-icon name="receipt" [size]="16" /> Siparişlerim</a>
+              <button type="button" role="menuitem" (click)="logout()">
+                <app-icon name="logout" [size]="16" /> Çıkış yap
+              </button>
+            </div>
+          }
+        </div>
+      } @else {
+        <a routerLink="/login" class="btn btn--ghost btn--sm">Giriş</a>
+        <a routerLink="/register" class="btn btn--primary btn--sm">Kayıt ol</a>
+      }
+
+      <button type="button" class="btn btn--ghost btn--icon menu-toggle" (click)="menuOpen.set(!menuOpen())"
+              aria-label="Menü">
+        <app-icon [name]="menuOpen() ? 'x' : 'menu'" />
+      </button>
+    </div>
+  </div>
+</header>
+
+@if (accountOpen()) {
+  <div class="click-away" (click)="accountOpen.set(false)"></div>
+}
+
+<main>
+  <router-outlet />
+</main>
+
+<footer class="footer">
+  <div class="container footer__inner">
+    <span class="brand brand--muted">
+      <span class="brand__mark"><app-icon name="mountain" [size]="16" /></span>
+      Uludağ Market
+    </span>
+    <span class="small muted">© {{ year }} · ECommerce API istemcisi · İki adımlı doğrulama ile korunur</span>
+  </div>
+</footer>
+
+<app-toast-container />

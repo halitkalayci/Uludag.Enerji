@@ -1,0 +1,156 @@
+<div class="container page">
+  <a routerLink="/orders" class="back"><app-icon name="arrowLeft" [size]="16" /> Siparişler</a>
+
+  @if (loading() && !order()) {
+    <div class="stack">
+      <div class="skeleton" style="height: 110px"></div>
+      <div class="skeleton" style="height: 260px"></div>
+    </div>
+  } @else if (error() && !order()) {
+    <div class="card empty">
+      <div class="empty__icon"><app-icon name="info" /></div>
+      <h3>Sipariş yüklenemedi</h3>
+      <p>{{ error() }}</p>
+      <div class="row">
+        <button type="button" class="btn" (click)="load()">Tekrar dene</button>
+        <a routerLink="/orders" class="btn btn--primary">Siparişlere dön</a>
+      </div>
+    </div>
+  } @else if (order(); as order) {
+    <header class="head card">
+      <div class="head__main">
+        <span class="eyebrow">Sipariş</span>
+        <h1 class="mono">#{{ order.id.slice(0, 8).toUpperCase() }}</h1>
+
+        @if (editingDate()) {
+          <form class="row" [formGroup]="dateForm" (ngSubmit)="saveDate()">
+            <input type="datetime-local" class="input" style="width: auto" formControlName="orderDate" />
+            <button type="submit" class="btn btn--primary btn--sm" [disabled]="busy()">Kaydet</button>
+            <button type="button" class="btn btn--ghost btn--sm" (click)="editingDate.set(false)">Vazgeç</button>
+          </form>
+        } @else {
+          <p class="muted">
+            {{ order.orderDate | date: 'd MMMM y, EEEE HH:mm' }}
+            <button type="button" class="link-btn" (click)="editingDate.set(true)">
+              <app-icon name="edit" [size]="14" /> Tarihi düzenle
+            </button>
+          </p>
+        }
+      </div>
+
+      <div class="head__total">
+        <span>Toplam tutar</span>
+        <strong>{{ order.totalPrice | money: order.currency }}</strong>
+        <span class="small">{{ items().length }} kalem</span>
+      </div>
+    </header>
+
+    <div class="layout">
+      <section class="card">
+        <div class="section-head">
+          <h3>Sipariş kalemleri</h3>
+          @if (busy()) { <span class="spinner" style="color: var(--primary)"></span> }
+        </div>
+
+        @if (items().length === 0) {
+          <div class="empty">
+            <div class="empty__icon"><app-icon name="box" /></div>
+            <p>Bu siparişte kalem yok. Sağdaki formdan ürün ekleyin.</p>
+          </div>
+        } @else {
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Ürün</th>
+                  <th class="num">Birim</th>
+                  <th class="num">Adet</th>
+                  <th class="num">Tutar</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of items(); track item.id) {
+                  <tr>
+                    <td>
+                      <div class="product">
+                        <app-product-art class="product__art" [compact]="true" [name]="productName(item.productId)" />
+                        <span>{{ productName(item.productId) }}</span>
+                      </div>
+                    </td>
+                    <td class="num">{{ unitPrice(item) | money: item.currency }}</td>
+                    <td class="num">
+                      @if (editingItem() === item.id) {
+                        <input type="number" min="1" class="input amount-input" [value]="editAmount()"
+                               (input)="onEditAmount($event)" (keydown.enter)="saveItem(item)" />
+                      } @else {
+                        {{ item.amount }}
+                      }
+                    </td>
+                    <td class="num"><strong>{{ item.totalPrice | money: item.currency }}</strong></td>
+                    <td class="num">
+                      <div class="row" style="justify-content: flex-end; gap: 4px; flex-wrap: nowrap">
+                        @if (editingItem() === item.id) {
+                          <button type="button" class="btn btn--sm btn--primary btn--icon" (click)="saveItem(item)"
+                                  [disabled]="busy()" aria-label="Kaydet">
+                            <app-icon name="check" [size]="15" />
+                          </button>
+                          <button type="button" class="btn btn--sm btn--ghost btn--icon" (click)="editingItem.set(null)"
+                                  aria-label="Vazgeç">
+                            <app-icon name="x" [size]="15" />
+                          </button>
+                        } @else {
+                          <button type="button" class="btn btn--sm btn--ghost btn--icon" (click)="startEdit(item)"
+                                  [disabled]="busy()" aria-label="Adedi düzenle">
+                            <app-icon name="edit" [size]="15" />
+                          </button>
+                          <button type="button" class="btn btn--sm btn--danger btn--icon" (click)="removeItem(item)"
+                                  [disabled]="busy()" aria-label="Kalemi sil">
+                            <app-icon name="trash" [size]="15" />
+                          </button>
+                        }
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </section>
+
+      <aside class="stack">
+        <form class="card card-body stack" [formGroup]="addForm" (ngSubmit)="addItem()">
+          <h3>Ürün ekle</h3>
+          <div class="field">
+            <label for="productId">Ürün</label>
+            <select id="productId" class="select" formControlName="productId">
+              <option value="" disabled>Ürün seçin…</option>
+              @for (product of addableProducts(); track product.id) {
+                <option [value]="product.id">{{ product.name }} · {{ product.amount | money: product.currency }}</option>
+              }
+            </select>
+            @if (addableProducts().length === 0) {
+              <span class="hint">{{ order.currency }} para biriminde stokta ürün yok.</span>
+            }
+          </div>
+          <div class="field">
+            <label for="amount">Adet</label>
+            <input id="amount" type="number" min="1" class="input" formControlName="amount" />
+          </div>
+          <button type="submit" class="btn btn--primary btn--block" [disabled]="busy()">
+            <app-icon name="plus" [size]="16" /> Siparişe ekle
+          </button>
+        </form>
+
+        <div class="card card-body stack danger-zone">
+          <h3>Siparişi sil</h3>
+          <p class="small muted">Sipariş ve tüm kalemleri kalıcı olarak silinir.</p>
+          <button type="button" class="btn btn--danger btn--block" (click)="removeOrder()" [disabled]="busy()">
+            <app-icon name="trash" [size]="16" /> Siparişi sil
+          </button>
+        </div>
+      </aside>
+    </div>
+  }
+</div>

@@ -1,0 +1,80 @@
+<div class="container page">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">Alışveriş</span>
+      <h1>Sepetim</h1>
+      <p>{{ cart.count() }} ürün</p>
+    </div>
+    @if (!cart.isEmpty()) {
+      <button type="button" class="btn btn--ghost btn--sm" (click)="cart.clear()">
+        <app-icon name="trash" [size]="16" /> Sepeti boşalt
+      </button>
+    }
+  </header>
+
+  @if (cart.isEmpty()) {
+    <div class="card empty">
+      <div class="empty__icon"><app-icon name="cart" /></div>
+      <h3>Sepetiniz boş</h3>
+      <p>Ürünlere göz atıp beğendiklerinizi sepete ekleyin.</p>
+      <a routerLink="/" class="btn btn--primary">Alışverişe başla</a>
+    </div>
+  } @else {
+    @if (error()) {
+      <div class="alert alert--error" style="margin-bottom: 18px" role="alert">
+        <app-icon name="info" [size]="18" /> {{ error() }}
+      </div>
+    }
+
+    @for (group of cart.totals(); track group.currency) {
+      <div class="layout">
+        <div class="card lines">
+          @for (line of group.lines; track line.product.id) {
+            <div class="line">
+              <app-product-art class="line__art" [compact]="true" [name]="line.product.name" />
+              <div class="line__info">
+                <a [routerLink]="['/products', line.product.id]" class="line__name">{{ line.product.name || 'İsimsiz ürün' }}</a>
+                <span class="small muted">Birim: {{ line.product.amount | money: line.product.currency }} · Stok: {{ line.product.stock }}</span>
+              </div>
+              <div class="qty">
+                <button type="button" (click)="cart.setQuantity(line.product.id, line.quantity - 1)" aria-label="Azalt">
+                  <app-icon name="minus" [size]="15" />
+                </button>
+                <span>{{ line.quantity }}</span>
+                <button type="button" (click)="cart.setQuantity(line.product.id, line.quantity + 1)"
+                        [disabled]="line.quantity >= line.product.stock" aria-label="Arttır">
+                  <app-icon name="plus" [size]="15" />
+                </button>
+              </div>
+              <strong class="line__total">{{ line.product.amount * line.quantity | money: line.product.currency }}</strong>
+              <button type="button" class="btn btn--ghost btn--icon" (click)="cart.remove(line.product.id)" aria-label="Kaldır">
+                <app-icon name="trash" [size]="17" />
+              </button>
+            </div>
+          }
+        </div>
+
+        <aside class="card summary">
+          <h3>Sipariş özeti</h3>
+          @if (cart.totals().length > 1) {
+            <span class="badge badge--primary">{{ group.currency }} siparişi</span>
+          }
+          <div class="summary__row"><span>Ara toplam</span><span>{{ group.total | money: group.currency }}</span></div>
+          <div class="summary__row summary__total"><span>Toplam</span><strong>{{ group.total | money: group.currency }}</strong></div>
+
+          @if (auth.isAuthenticated()) {
+            <button type="button" class="btn btn--accent btn--lg btn--block" (click)="placeOrder(group)"
+                    [disabled]="placing() !== null">
+              @if (placing() === group.currency) { <span class="spinner"></span> } Siparişi ver
+            </button>
+          } @else {
+            <a routerLink="/login" [queryParams]="{ returnUrl: '/cart' }" class="btn btn--primary btn--lg btn--block">
+              Sipariş için giriş yapın
+            </a>
+          }
+          <p class="small muted center"><app-icon name="lock" [size]="13" /> Sipariş, hesabınıza kaydedilir</p>
+        </aside>
+      </div>
+    }
+  }
+</div>

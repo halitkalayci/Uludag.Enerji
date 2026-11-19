@@ -1,0 +1,168 @@
+<div class="container page">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">Yönetim</span>
+      <h1>Ürün yönetimi</h1>
+      <p>Katalogdaki ürünleri ekleyin, fiyat ve stoklarını güncelleyin.</p>
+    </div>
+    <button type="button" class="btn btn--primary" (click)="openCreate()">
+      <app-icon name="plus" [size]="18" /> Yeni ürün
+    </button>
+  </header>
+
+  <div class="stats">
+    <div class="card stat"><span>Toplam ürün</span><strong>{{ stats().total }}</strong></div>
+    <div class="card stat"><span>Azalan stok (≤5)</span><strong class="warn">{{ stats().lowStock }}</strong></div>
+    <div class="card stat"><span>Tükenen</span><strong class="danger">{{ stats().outOfStock }}</strong></div>
+  </div>
+
+  <div class="card">
+    <div class="toolbar">
+      <label class="search">
+        <app-icon name="search" [size]="17" />
+        <input type="search" placeholder="Ürün adında ara…" [value]="query()" (input)="onSearch($event)" />
+      </label>
+      <button type="button" class="btn btn--ghost btn--sm" (click)="load(true)" [disabled]="loading()">
+        <app-icon name="refresh" [size]="16" /> Yenile
+      </button>
+    </div>
+
+    @if (error()) {
+      <div class="empty">
+        <div class="empty__icon"><app-icon name="info" /></div>
+        <p>{{ error() }}</p>
+        <button type="button" class="btn" (click)="load(true)">Tekrar dene</button>
+      </div>
+    } @else if (loading() && products().length === 0) {
+      @for (i of [1, 2, 3, 4]; track i) {
+        <div class="skeleton" style="height: 44px; margin: 12px 16px"></div>
+      }
+    } @else if (products().length === 0) {
+      <div class="empty">
+        <div class="empty__icon"><app-icon name="box" /></div>
+        <h3>{{ query() ? 'Eşleşen ürün yok' : 'Henüz ürün eklenmemiş' }}</h3>
+        @if (!query()) {
+          <button type="button" class="btn btn--primary" (click)="openCreate()">İlk ürünü ekle</button>
+        }
+      </div>
+    } @else {
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Ürün</th>
+              <th class="num">Fiyat</th>
+              <th class="num">Stok</th>
+              <th>Durum</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (product of products(); track product.id) {
+              <tr>
+                <td>
+                  <div class="product">
+                    <app-product-art class="product__art" [compact]="true" [name]="product.name" />
+                    <div class="product__text">
+                      <a [routerLink]="['/products', product.id]">{{ product.name || 'İsimsiz ürün' }}</a>
+                      <span class="mono small muted">{{ product.id }}</span>
+                    </div>
+                  </div>
+                </td>
+                <td class="num"><strong>{{ product.amount | money: product.currency }}</strong></td>
+                <td class="num">{{ product.stock }}</td>
+                <td>
+                  @if (product.stock === 0) {
+                    <span class="badge badge--danger">Tükendi</span>
+                  } @else if (product.stock <= 5) {
+                    <span class="badge badge--warning">Azalıyor</span>
+                  } @else {
+                    <span class="badge badge--success">Stokta</span>
+                  }
+                </td>
+                <td class="num">
+                  <div class="row" style="justify-content: flex-end; gap: 6px; flex-wrap: nowrap">
+                    <button type="button" class="btn btn--sm" (click)="openEdit(product)">
+                      <app-icon name="edit" [size]="15" /> Düzenle
+                    </button>
+                    <button type="button" class="btn btn--sm btn--danger btn--icon" (click)="remove(product)"
+                            [disabled]="deleting() === product.id" aria-label="Sil">
+                      <app-icon name="trash" [size]="15" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</div>
+
+@if (dialogOpen()) {
+  <div class="backdrop" (click)="close()" (keydown.escape)="close()">
+    <form class="dialog" [formGroup]="form" (ngSubmit)="save()" (click)="$event.stopPropagation()" novalidate
+          role="dialog" aria-modal="true" aria-labelledby="dialog-title">
+      <div class="dialog__header">
+        <span class="eyebrow">{{ editing() ? 'Düzenle' : 'Yeni' }}</span>
+        <h2 id="dialog-title">{{ editing() ? 'Ürünü güncelle' : 'Ürün ekle' }}</h2>
+      </div>
+
+      <div class="dialog__body">
+        <div class="preview">
+          <app-product-art [name]="form.controls.name.value || 'Yeni ürün'" />
+        </div>
+
+        @if (formError()) {
+          <div class="alert alert--error" style="margin-bottom: 16px" role="alert">
+            <app-icon name="info" [size]="18" /> {{ formError() }}
+          </div>
+        }
+
+        <div class="form-grid">
+          <div class="field full">
+            <label for="name">Ürün adı</label>
+            <input id="name" class="input" formControlName="name" placeholder="Ör. Bursa Kestane Şekeri" />
+            @if (form.controls.name.touched && form.controls.name.invalid) {
+              <span class="error">Ürün adı zorunludur.</span>
+            }
+          </div>
+
+          <div class="field">
+            <label for="amount">Fiyat</label>
+            <input id="amount" class="input" type="number" step="0.01" min="0" formControlName="amount" />
+            @if (form.controls.amount.touched && form.controls.amount.invalid) {
+              <span class="error">Fiyat 0'dan büyük olmalı.</span>
+            }
+          </div>
+
+          <div class="field">
+            <label for="currency">Para birimi</label>
+            <select id="currency" class="select" formControlName="currency">
+              @for (currency of currencies; track currency) {
+                <option [value]="currency">{{ currency }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="field full">
+            <label for="stock">Stok adedi</label>
+            <input id="stock" class="input" type="number" min="0" step="1" formControlName="stock" />
+            @if (form.controls.stock.touched && form.controls.stock.invalid) {
+              <span class="error">Stok negatif olamaz.</span>
+            }
+          </div>
+        </div>
+      </div>
+
+      <div class="dialog__footer">
+        <button type="button" class="btn btn--ghost" (click)="close()">Vazgeç</button>
+        <button type="submit" class="btn btn--primary" [disabled]="saving()">
+          @if (saving()) { <span class="spinner"></span> }
+          {{ editing() ? 'Değişiklikleri kaydet' : 'Ürünü ekle' }}
+        </button>
+      </div>
+    </form>
+  </div>
+}

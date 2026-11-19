@@ -1,0 +1,225 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+main { flex: 1; }
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: rgba(246, 245, 240, 0.85);
+  backdrop-filter: saturate(1.4) blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+
+.topbar__inner {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  height: 68px;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 600;
+  &:hover { text-decoration: none; }
+
+  &__mark {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: var(--primary);
+    color: #fff;
+  }
+
+  &__name span { color: var(--accent); margin-left: 3px; font-style: italic; }
+
+  &--muted {
+    font-size: 15px;
+    color: var(--text-soft);
+    .brand__mark { width: 26px; height: 26px; border-radius: 8px; }
+  }
+}
+
+.nav {
+  display: flex;
+  gap: 4px;
+  flex: 1;
+
+  a {
+    padding: 8px 14px;
+    border-radius: 999px;
+    color: var(--text-soft);
+    font-weight: 600;
+    font-size: 14px;
+    &:hover { text-decoration: none; background: var(--bg-soft); }
+    &.is-active { color: var(--primary); background: var(--primary-soft); }
+  }
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cart-btn {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  color: var(--text);
+  &:hover { background: var(--bg-soft); }
+
+  &__count {
+    position: absolute;
+    top: -3px;
+    right: -6px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 18px;
+    text-align: center;
+    color: #fff;
+    background: var(--accent);
+    border-radius: 999px;
+    border: 2px solid var(--bg);
+    box-sizing: content-box;
+  }
+}
+
+.account {
+  position: relative;
+  z-index: 45;
+
+  &__trigger {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 12px 4px 4px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--surface);
+    font: 600 13px var(--font-body);
+    color: var(--text);
+    cursor: pointer;
+  }
+
+  &__email {
+    max-width: 170px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__menu {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 8px);
+    width: 250px;
+    padding: 6px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    animation: pop-in 0.15s ease-out;
+
+    a,
+    button {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 10px 12px;
+      border: 0;
+      border-radius: var(--radius-sm);
+      background: none;
+      font: 500 14px var(--font-body);
+      color: var(--text);
+      cursor: pointer;
+      text-align: left;
+      &:hover { background: var(--bg-soft); text-decoration: none; }
+    }
+
+    button { color: var(--danger); }
+  }
+
+  &__head {
+    display: flex;
+    flex-direction: column;
+    padding: 10px 12px 12px;
+    margin-bottom: 4px;
+    border-bottom: 1px solid var(--border);
+    strong { font-size: 14px; overflow: hidden; text-overflow: ellipsis; }
+  }
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.click-away {
+  position: fixed;
+  inset: 0;
+  z-index: 39;
+}
+
+.menu-toggle { display: none; }
+
+.footer {
+  border-top: 1px solid var(--border);
+  background: var(--surface-muted);
+
+  &__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding-top: 22px;
+    padding-bottom: 22px;
+  }
+}
+
+@media (max-width: 860px) {
+  .menu-toggle { display: inline-flex; }
+  .account__email { display: none; }
+  .account__trigger { padding: 4px; }
+
+  .nav {
+    display: none;
+    position: absolute;
+    top: 68px;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    padding: 12px 20px 18px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    box-shadow: var(--shadow-md);
+    &--open { display: flex; }
+  }
+
+  .topbar__inner { justify-content: space-between; }
+}
