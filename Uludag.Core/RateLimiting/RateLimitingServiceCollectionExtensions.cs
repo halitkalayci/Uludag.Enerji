@@ -23,6 +23,9 @@ namespace Microsoft.Extensions.DependencyInjection
                 throw new ArgumentException("RateLimitOptions.Capacity sıfırdan büyük olmalıdır.", nameof(leakyBucketOptions));
             if (leakyBucketOptions.LeakIntervalSeconds <= 0)
                 throw new ArgumentException("RateLimitOptions.LeakIntervalSeconds sıfırdan büyük olmalıdır.", nameof(leakyBucketOptions));
+            // Hatalı bir değer (ör. "swagger") hiçbir yolla eşleşmez ve muafiyet sessizce çalışmazdı -> açılışta hata.
+            if (leakyBucketOptions.Whitelist.Any(path => string.IsNullOrWhiteSpace(path) || !path.StartsWith('/')))
+                throw new ArgumentException("RateLimitOptions.Whitelist'teki her değer \"/\" ile başlamalıdır.", nameof(leakyBucketOptions));
 
             // Singleton: ayarlar uygulama boyunca değişmez; bellek implementasyonu kovaları kendi içinde tutar.
             services.AddSingleton(leakyBucketOptions);

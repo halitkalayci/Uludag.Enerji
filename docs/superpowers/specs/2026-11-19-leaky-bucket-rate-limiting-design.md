@@ -62,6 +62,15 @@ Her istekte, atomik olarak:
 - **Doğrulama:** repoda test projesi yok; derleme + uygulamayı çalıştırıp aynı IP'den 11. istekte 429 geldiğini,
   12 sn sonra tekrar 1 isteğin geçtiğini elle (curl) doğrulama. Redis ve in-memory modlarının ikisi de denenir.
 
+## Güncelleme: Whitelist (kullanıcı kararı)
+"Muafiyet yok" kararı değişti: `RateLimitOptions:Whitelist` içindeki yollar rate limiting dışında tutulur
+(kovaya sayılmaz, hiç 429 almaz).
+- Başlangıç listesi: `["/swagger", "/openapi"]`.
+- Eşleşme: önek (prefix) + segment sınırı, harf duyarsız (`PathString.StartsWithSegments`, `OrdinalIgnoreCase`).
+  `"/swagger"` → `/swagger/index.html` muaf, `/swaggerX` değil. Sondaki `/` yok sayılır.
+- `"/"` ile başlamayan değer → açılışta `ArgumentException`.
+- `Request.Path` Kestrel tarafından `..` segmentlerinden arındırıldığı için `/swagger/../api/...` whitelist'e takılmaz.
+
 ## Hedef dışı
 - Endpoint / kullanıcı bazlı farklı limitler, kuyruklama (bekletme), muafiyet listesi.
 - Reverse proxy / forwarded headers desteği.

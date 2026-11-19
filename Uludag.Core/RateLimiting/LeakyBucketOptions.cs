@@ -10,5 +10,11 @@ namespace Uludag.Core.RateLimiting
 
         // Kaç saniyede bir damla sızar. Kalıcı hız -> 60 / LeakIntervalSeconds istek / dakika (12 sn -> 5 istek/dk).
         public int LeakIntervalSeconds { get; set; } = 12;
+
+        // Rate limiting dışında tutulan URL yolları. Eşleşme önek (prefix) usulüdür ve segment sınırına bakılır,
+        // büyük / küçük harf duyarsızdır:
+        //   "/swagger" -> /swagger, /swagger/index.html, /SWAGGER/v1/... muaf; /swaggerX muaf DEĞİL.
+        // Her değer "/" ile başlamalıdır (açılışta kontrol edilir). Sondaki "/" yok sayılır.
+        public string[] Whitelist { get; set; } = [];
     }
 }
