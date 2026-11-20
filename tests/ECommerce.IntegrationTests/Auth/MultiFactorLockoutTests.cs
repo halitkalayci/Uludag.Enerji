@@ -34,7 +34,6 @@ namespace ECommerce.IntegrationTests.Auth
             Assert.DoesNotContain("accessToken", await sixth.Content.ReadAsStringAsync(TestContext.Current.CancellationToken), StringComparison.OrdinalIgnoreCase);
         }
 
-        // Kilidin süresi beklenmeden ölçülür (spec Constraints; plan R-2): kullanıcının kilit kaydının kalan ömrü.
         // Girişin kendisi bu testin konusu: ikinci MFA oturumu gerçek HTTP girişiyle (yalnızca e-posta + şifre) açılır.
         // Giriş sayacı sıfırlasaydı her girişte 5 yeni deneme hakkı doğar, BR-9 delinirdi.
         [Fact]
@@ -58,6 +57,7 @@ namespace ECommerce.IntegrationTests.Auth
             Assert.DoesNotContain("accessToken", await sixth.Content.ReadAsStringAsync(TestContext.Current.CancellationToken), StringComparison.OrdinalIgnoreCase);
         }
 
+        // Kilidin süresi beklenmeden ölçülür (spec Constraints; plan R-2): kullanıcının kilit kaydının kalan ömrü.
         // BR-9: kilit limit AŞILINCA başlar ve 15 dk sürer. Hatalı denemeler zamana yayılmış olabilir: ilk denemeden
         // sonra "13 dk geçmiş" gibi davranılır (deneme kaydının kalan ömrü Redis'te 2 dk'ya indirilir — plan A-1, R-2).
         // Kilit ilk denemeden başlıyorsa bu noktada ~2 dk kalır; doğru uygulamada aşıldığı andan itibaren ~15 dk.
