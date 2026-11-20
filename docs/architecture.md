@@ -18,7 +18,7 @@ desenlerin (mediator, pipeline behavior, business rules, mapper) görünür ve �
 | `ECommerce.Domain` | Entity'ler ve value object'ler (`Money`); saf C# | İş kavramlarının şekli ve VO değişmezleri |
 | `ECommerce.Application` | Use case'ler: `Features/<X>/{Commands,Queries,Rules,Mappers,Constants,Locales}`, repository/servis arayüzleri | İş kuralları (BR-n), orkestrasyon, mesaj anahtarları |
 | `ECommerce.Persistence` | EF Core `UludagDbContext`, konfigürasyonlar, repository implementasyonları, seed'ler, migration'lar | Veritabanı şeması ve kalıcılık |
-| `ECommerce.Infrastructure` | Dış servisler için ayrılmış; **şu an boş** | — |
+| `ECommerce.Infrastructure` | Dış servislerin implementasyonları; Application'daki arayüzleri uygular. Şimdilik yalnız fake ödeme (`Payment/FakePaymentService`, spec 0008) | Dış sağlayıcı entegrasyonları ve ayarları (`FakePayment`) |
 | `ECommerce.WebAPI` | HTTP giriş noktası: controller'lar, middleware (ProblemDetails, rate limiting), DI kompozisyonu | HTTP sözleşmesi |
 | `Uludag.Core` | Yeniden kullanılabilir çekirdek: mediator + behavior'lar, JWT, MFA/OTP, hashing/şifreleme, cache, Leaky Bucket rate limiting | Çapraz kesen altyapı; hiçbir ECommerce kavramı |
 | `ECommerce/client` | Angular 22 SPA (`core/`, `features/`, `shared/`) | Kullanıcı arayüzü; API'ye `proxy.conf.json` ile bağlanır |
@@ -54,6 +54,5 @@ F-1…F-5 mimari testle doğrulanır (NetArchTest, `tests/ECommerce.Architecture
 
 ## Deliberately out of scope
 - Mikroservisler, event bus / mesaj kuyruğu, CQRS için ayrı okuma veritabanı.
-- `ECommerce.Infrastructure`'ın doldurulması (ihtiyaç doğana kadar).
-- Gerçek ödeme, kargo, fatura entegrasyonları.
+- Gerçek ödeme, kargo, fatura entegrasyonları (ödeme yalnız fake: spec 0008).
 - Postgres: aktif provider SQL Server; `_migrations_postgres_backup/` yalnızca yedek.

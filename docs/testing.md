@@ -33,7 +33,7 @@
   container aynı adım içinde durdurulur.
 
 ## What must be tested
-- Her iş kuralı BR-1…BR-11 (`docs/domain.md`) — Rules sınıfı unit testi, gerekirse handler/entegrasyon.
+- Her iş kuralı BR-1…BR-12 (`docs/domain.md`) — Rules sınıfı unit testi, gerekirse handler/entegrasyon.
 - F-1…F-5 (`docs/architecture.md`) — mimari test.
 - Kimlik ve yetki (hassas alan): 401/403 yolları, MFA kilidi, refresh token reuse tespiti — entegrasyon.
 - HTTP sözleşmesi: exception → durum kodu eşlemesi (404/400/401/403/500, ProblemDetails gövdesi).
