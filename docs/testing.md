@@ -13,7 +13,7 @@
 ## Frameworks & layout
 | Katman | Araç | Proje / yer | Profil |
 |---|---|---|---|
-| Unit | xUnit + NSubstitute | `tests/Uludag.Core.Tests`, `tests/ECommerce.Application.UnitTests` | `[fast]` |
+| Unit | xUnit + NSubstitute | `tests/Uludag.Core.Tests`, `tests/ECommerce.Application.UnitTests`, `tests/ECommerce.Infrastructure.UnitTests` | `[fast]` |
 | Mimari | NetArchTest | `tests/ECommerce.ArchitectureTests` | `[fast]` |
 | Entegrasyon | `WebApplicationFactory` + Testcontainers (SQL Server, Redis) | `tests/ECommerce.IntegrationTests`, `[Trait("Category","Integration")]` | full-only (Docker) |
 | Client | `ng test` (Angular 22 Vitest) | `ECommerce/client/src/**/*.spec.ts` | `[fast]` |
