@@ -33,7 +33,8 @@ entity'ye özgü iş kuralı üretimi, migration oluşturma, Angular istemci kod
 - R-4 **Özellik eşleme.** `Id` (Guid) Create gövdesine girmez; Update/Delete/GetById'de route'tan gelir.
   Skaler özellikler (string, sayısal tipler, bool, DateTime, Guid, enum ve bunların nullable'ları) komut
   ve yanıta aynen taşınır. `Money` tek ise `Amount` + `Currency` olarak düzleştirilir (Product şekli);
-  birden fazla `Money` varsa `<Özellik>Amount` + `<Özellik>Currency` olur. Navigation özellikleri
+  birden fazla `Money` varsa ya da entity'de `Amount`/`Currency` adlı başka bir özellik varsa (ör. `OrderItem.Amount`)
+  `<Özellik>Amount` + `<Özellik>Currency` olur (plan 0005 A-1). Navigation özellikleri
   (entity tipli ve koleksiyon) atlanır; FK Guid'leri skaler olarak kalır — `UserId` hariç: kimliğe bağlı
   alan olduğundan (`docs/conventions.md`, Data rules) Create/Update komutlarına girmez, yanıtta kalır ve
   çıktıda "sunucuda oturumdan atanmalı" uyarısı verilir. Tanınmayan tipler
@@ -105,7 +106,7 @@ none — no user interface (komut satırı aracı; akış R-1, R-6, R-7'de tanı
 - [ ] AC-5 — F-7: üretilen Command/Query handler'larında `if`/`else`/`switch` ve nesne başlatıcıyla mapping
   bulunmaz; kontroller `XBusinessRules`'ta, dönüşümler `XMapper`'dadır.
 - [ ] AC-6 — Özellik eşleme: R-4'ün her kuralı ayrı doğrulanır — `Id` Create'te yok; tek `Money` →
-  `Amount`/`Currency`; iki `Money` → önekli alanlar; navigation ve koleksiyon atlanır ve çıktıda uyarı
+  `Amount`/`Currency`; iki `Money` ya da ad çakışması → önekli alanlar; navigation ve koleksiyon atlanır ve çıktıda uyarı
   olarak listelenir; FK Guid ve nullable skaler korunur; `UserId` komutlara girmez, yanıtta kalır, uyarı verilir.
 - [ ] AC-7 — Çakışma ve force: hedef dosyalardan biri varken komut hiçbir dosya yazmadan/değiştirmeden
   sıfırdan farklı kodla çıkar ve çakışanları listeler; force seçeneğiyle üzerine yazar; aynı entity için
