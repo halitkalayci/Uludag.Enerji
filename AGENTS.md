@@ -10,6 +10,9 @@
 **Start work** with `/new-feature` in lite (it chains the segments and asks at each gate) or with
 `/analyze` in strict (one segment per role). Segment commands always stop (`workflows/segments.md`).
 **Language: chat=tr · docs=tr** — bootstrap sets `chat=<xx> · docs=<xx>`; protocol fields stay English (`docs/conventions.md`).
+**Worktree:** every session that changes the repo works in its own worktree (`scripts/worktree new <branch>`), never in
+the main tree — even with no parallel session; merge is proven by git, never by a user's word, then nothing is left behind
+(`scripts/worktree clean <branch>`). Rules: `docs/git.md` (Worktrees).
 
 ## Invariant rules (these survive bootstrap — never delete or weaken them)
 
@@ -31,7 +34,7 @@
 | Coding conventions (naming, errors, Money, UTC) | `docs/conventions.md` |
 | Testing rules | `docs/testing.md` |
 | Security rules | `docs/security.md` |
-| Git & branching rules | `docs/git.md` |
+| Git & branching rules · worktree per session (open, prove merge, clean) | `docs/git.md` · `scripts/worktree` |
 | Decisions (ADRs) · roles (who may do what) | `docs/decisions/` · `docs/roles/` |
 | Specs & plans | `specs/active/` · `specs/plans/` · shipped → `specs/done/` · deferred findings → `specs/backlog.md` |
 | Processes & gates · prompts & recovery ramps | `workflows/` · `prompts/` |

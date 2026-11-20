@@ -26,4 +26,5 @@ BASELINE → SPEC & PLAN → [APPROVAL] → REFACTOR → PROVE UNCHANGED → REV
    investigate).
 7. **SHIP.** Tick each criterion the proof covers (`[x]`); one that cannot be proven is moved out,
    never waived (R-08, `feature-development.md` step 10) → the mini-spec moves to `specs/done/`
-   (`Status: Shipped`) in the PR → merge.
+   (`Status: Shipped`) in the PR → merge (human) → `scripts/worktree clean <branch>` (`docs/git.md`,
+   Worktrees).
