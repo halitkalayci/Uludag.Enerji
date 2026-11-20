@@ -1,6 +1,6 @@
 # Spec 0006 — Worktree zorunluluğu ve merge sonrası temizlik (mini)
 
-- Status: Approved
+- Status: In progress
 - Mode: lite
 - Plan: `specs/plans/0006-plan.md`
 - Self-critique: done
