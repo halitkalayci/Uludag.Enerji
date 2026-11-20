@@ -22,6 +22,7 @@ const MESSAGES: Record<string, string> = {
   InvalidTokenSession: 'Oturumunuz zaten kapatılmış.',
   OrderNotFound: 'Sipariş bulunamadı.',
   OrderMustContainAtLeastOneItem: 'Sipariş en az bir ürün içermelidir.',
+  PaymentDeclined: 'Ödeme reddedildi. Lütfen tekrar deneyin.',
 };
 
 export function errorMessage(error: unknown, fallback = 'Beklenmeyen bir hata oluştu.'): string {
