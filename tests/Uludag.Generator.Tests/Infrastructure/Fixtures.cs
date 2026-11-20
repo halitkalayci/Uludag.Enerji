@@ -37,6 +37,28 @@ namespace Uludag.Generator.Tests.Infrastructure
             }
             """;
 
+        // Çalışırlık gözlemi (AC-3/AC-4) fixture'ı: AC-2 şekli (skaler + tek Money + FK Guid + navigation) ama
+        // kimliğe bağlı FK yok — istemcinin verebileceği ProductId; üretilen kod elle düzenlenmeden uçtan uca
+        // çalışır (review round 1, M-1). Seed edilmiş ürün: 2dcb27b9-06cf-4053-a423-c2e94ed048a6.
+        public const string PriceAlert = """
+            using ECommerce.Domain.ValueObjects;
+
+            namespace ECommerce.Domain.Entities
+            {
+                public class PriceAlert
+                {
+                    public Guid Id { get; set; }
+                    public string Label { get; set; } = null!;
+                    public int Priority { get; set; }
+                    public bool IsActive { get; set; }
+                    public Money TargetPrice { get; set; } = null!;
+                    public Guid ProductId { get; set; }
+
+                    public virtual Product Product { get; set; } = null!;
+                }
+            }
+            """;
+
         // İki Money: alanlar önekli düzleştirilir (spec R-4).
         public const string Coupon = """
             using ECommerce.Domain.ValueObjects;

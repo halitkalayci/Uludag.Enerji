@@ -26,8 +26,9 @@ namespace Uludag.Generator.Tests
                 var layout = new RepoLayout(root);
                 File.WriteAllText(Path.Combine(layout.EntitiesDir, "Category.cs"), Fixtures.Category);
                 File.WriteAllText(Path.Combine(layout.EntitiesDir, "Coupon.cs"), Fixtures.Coupon);
+                File.WriteAllText(Path.Combine(layout.EntitiesDir, "PriceAlert.cs"), Fixtures.PriceAlert);
 
-                foreach (string entity in new[] { "Category", "Coupon" })
+                foreach (string entity in new[] { "Category", "Coupon", "PriceAlert" })
                 {
                     var error = new StringWriter();
                     int exitCode = App.Run(["crud", entity], root, new StringWriter(), error);
@@ -41,7 +42,8 @@ namespace Uludag.Generator.Tests
                 // Üretilen dosyalar yeni uyarı da getirmez (mevcut uyarılar başka dosyalarda).
                 var generatedWarnings = buildOutput.Split('\n')
                     .Where(l => l.Contains("warning", StringComparison.OrdinalIgnoreCase))
-                    .Where(l => l.Contains("Category", StringComparison.Ordinal) || l.Contains("Coupon", StringComparison.Ordinal))
+                    .Where(l => l.Contains("Category", StringComparison.Ordinal) || l.Contains("Coupon", StringComparison.Ordinal)
+                        || l.Contains("PriceAlert", StringComparison.Ordinal))
                     .Distinct()
                     .ToList();
                 Assert.True(generatedWarnings.Count == 0, string.Join("\n", generatedWarnings));

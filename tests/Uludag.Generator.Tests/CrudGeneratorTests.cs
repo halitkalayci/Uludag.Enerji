@@ -204,6 +204,21 @@ namespace Uludag.Generator.Tests
         }
 
         [Fact]
+        public void Crud_SmokeFixture_ClientSuppliedForeignKeyInCommands_NoIdentityWarning()
+        {
+            // Çalışırlık gözlemi fixture'ı: tüm zorunlu alanlar istemciden gelir, elle düzenleme gerekmez (M-1).
+            using var repo = TestRepo.Create();
+            repo.AddEntity("PriceAlert", Fixtures.PriceAlert);
+
+            RunResult result = Run(repo, "crud", "PriceAlert");
+
+            Assert.Equal(ExitCodes.Success, result.ExitCode);
+            var create = Properties(FeatureFile(repo, "PriceAlert", "Commands/Create/CreatePriceAlertCommand.cs"), "CreatePriceAlertCommand");
+            Assert.Equal(["Label", "Priority", "IsActive", "Amount", "Currency", "ProductId"], create.Keys);
+            Assert.DoesNotContain("Uyarılar:", result.Output);
+        }
+
+        [Fact]
         public void Crud_PluralOverride_UsedForControllerAndDbSet()
         {
             using var repo = CategoryRepo();

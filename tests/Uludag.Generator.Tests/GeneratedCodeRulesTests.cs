@@ -13,6 +13,7 @@ namespace Uludag.Generator.Tests
         {
             { "Category", Fixtures.Category },
             { "Coupon", Fixtures.Coupon },
+            { "PriceAlert", Fixtures.PriceAlert },
         };
 
         private static readonly string[] RequestFiles =

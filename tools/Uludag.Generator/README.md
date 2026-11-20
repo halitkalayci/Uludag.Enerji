@@ -73,11 +73,13 @@ Kurallar:
 
 Domain kirlenmesin diye atılan bir dalda yapılır (spec G-1, plan 0005 R-9):
 
-1. `git switch -c tmp/0005-smoke`; `ECommerce.Domain/Entities/` altına bir fixture entity ekle
-   (ör. `tests/Uludag.Generator.Tests/Infrastructure/Fixtures.cs` içindeki `Category`).
-2. `uludag-gen crud Category` → `dotnet ef migrations add add_category -p … -s …`.
-3. `tests/ECommerce.IntegrationTests` altında `ApiFixture` ile geçici bir test: kullanıcı, `Category.*`
-   claim'leri ve token uygulamanın kendi servisleriyle hazırlanır; oluştur → listele → getir → güncelle →
-   sil; olmayan id → 404 ProblemDetails; token'sız → 401; claim'siz kullanıcı → 403.
-4. `dotnet test tests/ECommerce.IntegrationTests --filter "FullyQualifiedName~Category"` ve `./scripts/check`
+1. `git switch -c tmp/0005-smoke`; `ECommerce.Domain/Entities/PriceAlert.cs` olarak
+   `tests/Uludag.Generator.Tests/Infrastructure/Fixtures.cs` içindeki `PriceAlert`'i ekle. (Kimliğe bağlı FK
+   içermez: `Category`'nin `UserId`'si komutlara girmediği için Create, FK ihlaliyle 500 dönerdi.)
+2. `uludag-gen crud PriceAlert` → `dotnet ef migrations add add_price_alert -p … -s …`. Üretilen koda dokunma.
+3. `tests/ECommerce.IntegrationTests` altında `ApiFixture` ile geçici bir test: kullanıcı, `PriceAlert.*`
+   claim'leri ve token uygulamanın kendi servisleriyle hazırlanır; oluştur (`ProductId` = seed ürün
+   `2dcb27b9-06cf-4053-a423-c2e94ed048a6`) → listele → getir → güncelle → sil; olmayan id → 404
+   ProblemDetails; token'sız → 401; claim'siz kullanıcı → 403.
+4. `dotnet test tests/ECommerce.IntegrationTests --filter "FullyQualifiedName~PriceAlert"` ve `./scripts/check`
    (mimari testler) → sonucu kanıt tablosuna yaz; `git switch -` ve `git branch -D tmp/0005-smoke`.
