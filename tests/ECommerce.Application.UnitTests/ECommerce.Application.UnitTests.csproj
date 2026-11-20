@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <PackageReference Include="NSubstitute" Version="6.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\ECommerce\src\ECommerce.Application\ECommerce.Application.csproj" />
+  </ItemGroup>
+
+</Project>
