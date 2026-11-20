@@ -1,6 +1,6 @@
 # Spec 0009 — Ürün kategorisi
 
-- Status: In progress
+- Status: Shipped
 - Mode: lite
 - Plan: `specs/plans/0009-plan.md`
 - Self-critique: done
@@ -60,45 +60,48 @@ spec'in işidir.
   Kalaycı (delegated), 2026-11-20, kategori olmadan atama test edilemez; CRUD dilimi üretilir.
 - Onay: spec, clarify kararları (1–9) ve self-critique gap'leri (G-1…G-5) analistin önerileriyle
   kabul edildi — Halit Enes Kalaycı (delegated: "tüm süreçler önerinle, ship'e kadar"), 2026-11-20.
+- Ship: bağımsız VERIFY insan kararıyla atlandı ("Verify'ı da atla ve ship et") — Halit Enes Kalaycı,
+  2026-11-20. Kriterlerin kanıtı builder'ın kriter ↔ test haritası (`specs/plans/0009-plan.md`) + `CHECK GREEN (full)`
+  @3f023f3; bağımsız QA tablosu yok. R-2 niyetinde açık sınır: Türkçe i/İ, ı/I çiftleri (B-27).
 
 ## Acceptance criteria
-- [ ] AC-1 — `Category.Create` yetkili kullanıcı geçerli adla kategori oluşturur; kategori
+- [x] AC-1 — `Category.Create` yetkili kullanıcı geçerli adla kategori oluşturur; kategori
   listede ve tekil okumada aynı adla (kırpılmış) görünür.
-- [ ] AC-2 — Boş, yalnız boşluk ya da 100 karakterden uzun adla oluşturma ve ad değiştirme 400 ile
+- [x] AC-2 — Boş, yalnız boşluk ya da 100 karakterden uzun adla oluşturma ve ad değiştirme 400 ile
   reddedilir; tam 100 karakter kabul edilir. Reddedilen istekte hiçbir kategori oluşmaz/değişmez.
-- [ ] AC-3 — Var olan bir kategori adıyla (büyük/küçük harf farkıyla dahil) oluşturma ya da başka
+- [x] AC-3 — Var olan bir kategori adıyla (büyük/küçük harf farkıyla dahil) oluşturma ya da başka
   kategorinin adına değiştirme 400 ile reddedilir; kategoriyi kendi adının farklı harf düzeniyle
   yeniden adlandırmak kabul edilir.
-- [ ] AC-4 — Var olmayan kategori kimliğiyle tekil okuma, ad değiştirme ve silme 404 döner.
-- [ ] AC-5 — Hiç ürünü olmayan kategori silinir; ardından listede görünmez ve tekil okuması 404.
-- [ ] AC-6 — Ürünü olan kategoriyi silme 400 ile reddedilir ve kategori yerinde kalır; ürünü
+- [x] AC-4 — Var olmayan kategori kimliğiyle tekil okuma, ad değiştirme ve silme 404 döner.
+- [x] AC-5 — Hiç ürünü olmayan kategori silinir; ardından listede görünmez ve tekil okuması 404.
+- [x] AC-6 — Ürünü olan kategoriyi silme 400 ile reddedilir ve kategori yerinde kalır; ürünü
   kategorisiz yapıldıktan sonra aynı silme başarılı olur.
-- [ ] AC-7 — Kategoriyle oluşturulan ürünün liste ve tekil yanıtında kategori kimliği ve adı
+- [x] AC-7 — Kategoriyle oluşturulan ürünün liste ve tekil yanıtında kategori kimliği ve adı
   görünür; kategorisiz oluşturulan üründe ikisi null'dır. Kategori yeniden adlandırılınca ürün
   yanıtı yeni adı gösterir.
-- [ ] AC-8 — Ürün güncellemesi kategorisini başka kategoriyle değiştirebilir ve kaldırabilir
+- [x] AC-8 — Ürün güncellemesi kategorisini başka kategoriyle değiştirebilir ve kaldırabilir
   (null ya da alanı hiç göndermeden); her adımda okuma yanıtı yeni durumu gösterir.
-- [ ] AC-9 — Var olmayan kategori kimliğiyle (tamamı sıfır olan kimlik dahil) ürün oluşturma 404 döner ve ürün oluşmaz; aynı
+- [x] AC-9 — Var olmayan kategori kimliğiyle (tamamı sıfır olan kimlik dahil) ürün oluşturma 404 döner ve ürün oluşmaz; aynı
   kimlikle güncelleme 404 döner ve ürünün kategorisi değişmez.
-- [ ] AC-10 — Yetki: token'sız kategori isteği 401; ilgili `Category.*` yetkisi olmayan kullanıcı
+- [x] AC-10 — Yetki: token'sız kategori isteği 401; ilgili `Category.*` yetkisi olmayan kullanıcı
   için her kategori işlemi 403; R-7'deki yetkilerden herhangi biri (ve global `Admin`) yeterlidir.
   Kanıt: her işlem için yetkisiz → 403, kabul edilen yetkilerden bir örnek ve global `Admin`;
   tam kombinasyon matrisi gerekmez.
-- [ ] AC-11 — Değişiklik sonrası mevcut ürünler (seed ürün dahil) aynı ad, fiyat ve stokla
+- [x] AC-11 — Değişiklik sonrası mevcut ürünler (seed ürün dahil) aynı ad, fiyat ve stokla
   okunur ve kategorisizdir.
 
 ## Definition of Done
-- [ ] Every acceptance criterion mapped to proof (test or reproducible observation)
-- [ ] `scripts/check` green
-- [ ] Independent review done; real findings fixed, noise rejected with written rationale, deferred ones in `specs/backlog.md`
-- [ ] Docs / ADRs updated if behavior or architecture changed
-- [ ] Spec moved to `specs/done/` (it becomes immutable there)
+- [x] Every acceptance criterion mapped to proof (test or reproducible observation)
+- [x] `scripts/check` green
+- [x] Independent review done; real findings fixed, noise rejected with written rationale, deferred ones in `specs/backlog.md`
+- [x] Docs / ADRs updated if behavior or architecture changed
+- [x] Spec moved to `specs/done/` (it becomes immutable there)
 
 ## Scorecard (fill at ship — honest numbers make the process improvable)
 | Metric | Value |
 |---|---|
-| Spec revisions | |
-| Fix rounds | |
-| Review findings: real / noise / deferred | |
-| Regressions introduced | |
-| Bugs escaped to production | |
+| Spec revisions | 1 (self-critique gap'leri onayda katlandı) |
+| Fix rounds | 1 |
+| Review findings: real / noise / deferred | 2 / 1 / 2 (M-1 → B-27, I-1 → B-28) |
+| Regressions introduced | 0 gönderilen; 1 BUILD'de check yakaladı (generator test fikstürü, A-2) |
+| Bugs escaped to production | 0 (henüz merge edilmedi) |
