@@ -25,11 +25,14 @@ namespace Uludag.Generator.Generation
             CrudModel m = plan.Model;
             string verbNew = dryRun ? "Oluşturulacak" : "Oluşturuldu";
             // Çakışan dosyalar yalnızca --force ile üzerine yazılır; yoksa (dry-run) yazılmayacakları belirtilir.
-            string verbOverwrite = !force ? "Çakışan (zaten var, yazılmayacak)" : dryRun ? "Üzerine yazılacak" : "Üzerine yazıldı";
+            string verbOverwrite = !force ? "Üzerine yazılacak (yalnızca --force ile)" : dryRun ? "Üzerine yazılacak" : "Üzerine yazıldı";
             string verbEdit = dryRun ? "Değiştirilecek" : "Değiştirildi";
 
             output.WriteLine($"uludag-gen crud {m.Entity} (çoğul: {m.Plural}){(dryRun ? " — DRY RUN: hiçbir dosyaya dokunulmadı" : string.Empty)}");
             output.WriteLine($"Kök: {layout.Root}");
+            // Çakışmalı dry-run: stdout'u tek başına okuyan ajan da hiçbir şey yazılmayacağını bilsin (review round 2, L-A).
+            if (!force && plan.Conflicts.Count > 0)
+                output.WriteLine("ÇAKIŞMA VAR: --force olmadan hiçbir dosya yazılmaz ya da değiştirilmez; aşağıdaki plan --force ile çalıştırılırsa yapılacaklardır.");
 
             var created = plan.Files.Where(f => !f.Exists).ToList();
             var overwritten = plan.Files.Where(f => f.Exists).ToList();

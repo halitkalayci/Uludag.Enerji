@@ -323,7 +323,8 @@ namespace Uludag.Generator.Tests
             Assert.Equal(ExitCodes.Conflict, result.ExitCode);
             Assert.Equal(before, repo.Snapshot());
             Assert.Contains("Oluşturulacak (15):", result.Output);
-            Assert.Contains("Çakışan (zaten var, yazılmayacak) (1):", result.Output);
+            Assert.Contains("ÇAKIŞMA VAR: --force olmadan hiçbir dosya yazılmaz", result.Output);
+            Assert.Contains("Üzerine yazılacak (yalnızca --force ile) (1):", result.Output);
             Assert.Contains($"! {CategoryFiles[5]}", result.Output);
             Assert.Contains("Değiştirilecek (3):", result.Output);
             Assert.Contains($"= {CategoryFiles[5]}", result.Error);
@@ -341,6 +342,7 @@ namespace Uludag.Generator.Tests
             Assert.Equal(ExitCodes.Success, result.ExitCode);
             Assert.Equal(before, repo.Snapshot());
             Assert.Contains("DRY RUN", result.Output);
+            Assert.DoesNotContain("ÇAKIŞMA VAR", result.Output);
             Assert.Contains("Oluşturulacak (16):", result.Output);
             foreach (string file in CategoryFiles)
                 Assert.Contains($"+ {file}", result.Output);
