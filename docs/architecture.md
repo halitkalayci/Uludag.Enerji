@@ -26,7 +26,8 @@ desenlerin (mediator, pipeline behavior, business rules, mapper) görünür ve �
 
 Feature sahipliği (Application içinde): **Auth** → User, OperationClaim, UserOperationClaim,
 OtpAuthenticator, RefreshToken · **Product** → Product · **Order** → Order (kalemleriyle aggregate) ·
-**OrderItem** → OrderItem.
+**OrderItem** → OrderItem · **Category** → Category (spec 0009; Product kategoriye `ICategoryService` ile,
+Category ürün tablosuna `IProductService` ile bakar).
 
 ## Communication rules
 - HTTP → Controller → `IMediator.Send(...)` → handler. Controller iş mantığı içermez.
