@@ -37,3 +37,4 @@
 | Processes & gates · prompts & recovery ramps | `workflows/` · `prompts/` |
 | Every command: what it does, where it stops, lite vs strict | `docs/commands.md` |
 | The single verification command | `scripts/check` |
+| CRUD for a new Domain entity — generate first (`uludag-gen crud <Entity>`), then edit | `tools/Uludag.Generator/README.md` · `docs/conventions.md` (Code generation) |
