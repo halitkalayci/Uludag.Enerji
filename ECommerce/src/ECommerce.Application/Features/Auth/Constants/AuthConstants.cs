@@ -11,6 +11,7 @@ namespace ECommerce.Application.Features.Auth.Constants
         public const string MultiFactorAlreadyEnabled = "MultiFactorAlreadyEnabled";
         public const string OtpAuthenticatorNotSetUp = "OtpAuthenticatorNotSetUp";
         public const string InvalidAuthenticatorCode = "InvalidAuthenticatorCode";
+        public const string AuthenticatorCodeAlreadyUsed = "AuthenticatorCodeAlreadyUsed";
         public const string TooManyAuthenticatorAttempts = "TooManyAuthenticatorAttempts";
         public const string InvalidRefreshToken = "InvalidRefreshToken";
         public const string RefreshTokenExpired = "RefreshTokenExpired";

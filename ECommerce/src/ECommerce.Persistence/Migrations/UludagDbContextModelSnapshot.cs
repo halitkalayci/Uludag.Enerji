@@ -190,6 +190,9 @@ namespace ECommerce.Persistence.Migrations
                     b.Property<bool>("IsVerified")
                         .HasColumnType("bit");
 
+                    b.Property<long?>("LastUsedTimeStep")
+                        .HasColumnType("bigint");
+
                     b.Property<byte[]>("SecretKey")
                         .IsRequired()
                         .HasMaxLength(64)

@@ -14,6 +14,10 @@ namespace ECommerce.Domain.Entities
         public byte[] SecretKey { get; set; } = null!;
         public bool IsVerified { get; set; }
 
+        // Son başarılı doğrulamada eşleşen TOTP zaman adımı (Unix zamanı / 30 sn). Aynı kodun (ve daha eski
+        // adımların) tekrar kullanılmasını engeller (RFC 6238 §5.2). Hiç doğrulanmadıysa null.
+        public long? LastUsedTimeStep { get; set; }
+
         // Navigation Properties
         public virtual User User { get; set; } = null!;
     }

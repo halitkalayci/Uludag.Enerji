@@ -143,10 +143,20 @@ namespace ECommerce.Application.Features.Auth.Rules
         }
 
         // Kod, authenticator uygulamasının şu an ürettiği kodla eşleşmeli -> değilse 400.
-        public void AuthenticatorCodeShouldBeValid(byte[] secretKey, string authenticatorCode)
+        // Geçerliyse kodun eşleştiği zaman adımını döner (tekrar kullanım kontrolü için).
+        public long AuthenticatorCodeShouldBeValid(byte[] secretKey, string authenticatorCode)
         {
-            if (!otpAuthenticatorHelper.VerifyCode(secretKey, authenticatorCode))
+            if (!otpAuthenticatorHelper.TryVerifyCode(secretKey, authenticatorCode, out long timeStep))
                 throw new BusinessException(AuthConstants.InvalidAuthenticatorCode);
+            return timeStep;
+        }
+
+        // Başarıyla kullanılmış bir kod (ya da daha eski bir adımın kodu) ikinci kez kabul edilmez (RFC 6238 §5.2).
+        // Kontrol ve kayıt tek atomik adımdır: eşzamanlı iki istekten yalnızca biri geçer.
+        public async Task AuthenticatorCodeShouldNotBeReused(Guid userId, long timeStep, CancellationToken cancellationToken = default)
+        {
+            if (!await otpAuthenticatorRepository.TryUseTimeStepAsync(userId, timeStep, cancellationToken))
+                throw new BusinessException(AuthConstants.AuthenticatorCodeAlreadyUsed);
         }
 
         // ---- Refresh Token ----
