@@ -47,6 +47,16 @@ namespace Uludag.Generator.Tests
             Assert.Equal(CategoryFiles.Order(), added);
             foreach (string file in CategoryFiles)
                 Assert.Contains($"+ {file}", result.Output);
+
+            var changed = before.Keys.Where(k => before[k] != after[k]).Order().ToList();
+            Assert.Equal(
+                [
+                    "ECommerce/src/ECommerce.Persistence/Contexts/UludagDbContext.cs",
+                    "ECommerce/src/ECommerce.Persistence/PersistenceServiceRegisteration.cs",
+                    "ECommerce/src/ECommerce.Persistence/Seeds/OperationClaimSeeds.cs",
+                ],
+                changed);
+            Assert.Contains("Değiştirildi (3):", result.Output);
             Assert.Contains("ZORUNLU — migration", result.Output);
             Assert.Contains("dotnet ef migrations add add_category", result.Output);
         }
@@ -184,6 +194,68 @@ namespace Uludag.Generator.Tests
 
             Assert.Equal(ExitCodes.UserError, result.ExitCode);
             Assert.Contains(message, result.Error);
+            Assert.Equal(before, repo.Snapshot());
+        }
+
+        [Fact]
+        public void Crud_ExistingFile_WritesNothingExit2()
+        {
+            using var repo = CategoryRepo();
+            string existing = repo.Full(CategoryFiles[5]); // CategoryResponse.cs elle yazılmış olsun
+            repo.Write(existing, "// elle yazıldı\n");
+            var before = repo.Snapshot();
+
+            RunResult result = Run(repo, "crud", "Category");
+
+            Assert.Equal(ExitCodes.Conflict, result.ExitCode);
+            Assert.Equal(before, repo.Snapshot()); // ne yeni dosya ne kayıt eklemesi
+            Assert.Contains($"= {CategoryFiles[5]}", result.Error);
+            Assert.Contains("--force", result.Error);
+        }
+
+        [Fact]
+        public void Crud_ExistingFile_Force_Overwrites()
+        {
+            using var repo = CategoryRepo();
+            string existing = repo.Full(CategoryFiles[5]);
+            repo.Write(existing, "// elle yazıldı\n");
+
+            RunResult result = Run(repo, "crud", "Category", "--force");
+
+            Assert.Equal(ExitCodes.Success, result.ExitCode);
+            Assert.Contains("public class CategoryResponse", File.ReadAllText(existing));
+            Assert.Contains($"! {CategoryFiles[5]}", result.Output);
+            foreach (string file in CategoryFiles)
+                Assert.True(File.Exists(repo.Full(file)), file);
+        }
+
+        [Fact]
+        public void Crud_SecondRunWithForce_DoesNotDuplicateRegistrations()
+        {
+            using var repo = CategoryRepo();
+            Assert.Equal(ExitCodes.Success, Run(repo, "crud", "Category").ExitCode);
+            string seedsAfterFirst = File.ReadAllText(repo.Layout.OperationClaimSeedsFile);
+
+            Assert.Equal(ExitCodes.Conflict, Run(repo, "crud", "Category").ExitCode);
+            RunResult second = Run(repo, "crud", "Category", "--force");
+
+            Assert.Equal(ExitCodes.Success, second.ExitCode);
+            Assert.Contains("Zaten kayıtlı (atlandı):", second.Output);
+            Assert.DoesNotContain("Değiştirildi", second.Output);
+            Assert.Equal(seedsAfterFirst, File.ReadAllText(repo.Layout.OperationClaimSeedsFile)); // seed Id'leri sabit kalır
+        }
+
+        [Fact]
+        public void Crud_MissingRegistrationFile_FailsAndWritesNothing()
+        {
+            using var repo = TestRepo.Create(withRegistrationFiles: false);
+            repo.AddEntity("Category", Fixtures.Category);
+            var before = repo.Snapshot();
+
+            RunResult result = Run(repo, "crud", "Category");
+
+            Assert.Equal(ExitCodes.UserError, result.ExitCode);
+            Assert.Contains("kayıt dosyası bulunamadı", result.Error);
             Assert.Equal(before, repo.Snapshot());
         }
 

@@ -5,8 +5,9 @@ namespace Uludag.Generator.Generation
     // Oluşturulacak yeni dosya. Exists: hedefte zaten bir dosya var (çakışma; --force ile üzerine yazılır).
     internal sealed record PlannedFile(string Path, string Content, bool Exists);
 
-    // Var olan bir kayıt dosyasına yapılacak ekleme (DbSet, DI, seed). Content: dosyanın yeni hali.
-    internal sealed record PlannedEdit(string Path, string Content, string Description);
+    // Var olan bir kayıt dosyasına yapılacak ekleme (DbSet, DI, seed). Content: dosyanın yeni hali;
+    // Bom: dosya BOM ile başlıyordu, öyle yazılır.
+    internal sealed record PlannedEdit(string Path, string Content, string Description, bool Bom);
 
     // Bellekte hazırlanmış üretimin tamamı: önce bu hazırlanır, çakışma yoksa hepsi birden yazılır.
     internal sealed class GenerationPlan

@@ -11,6 +11,7 @@ namespace Uludag.Generator.Generation
     internal static class CrudGenerator
     {
         private static readonly UTF8Encoding Utf8NoBom = new(encoderShouldEmitUTF8Identifier: false);
+        private static readonly UTF8Encoding Utf8WithBom = new(encoderShouldEmitUTF8Identifier: true);
 
         public static PlanResult Plan(RepoLayout layout, DomainModel domain, string entityName, string? plural)
         {
@@ -33,12 +34,16 @@ namespace Uludag.Generator.Generation
                 .Select(f => new PlannedFile(f.Path, TemplateText.Normalize(f.Content), File.Exists(f.Path)))
                 .ToList();
 
+            RegistrationOutcome registrations = RegistrationEditor.Plan(layout, model, Guid.NewGuid);
+            if (registrations.Error is not null)
+                return PlanResult.Fail(registrations.Error);
+
             return PlanResult.Ok(new GenerationPlan
             {
                 Model = model,
                 Files = files,
-                Edits = [],
-                AlreadyRegistered = [],
+                Edits = registrations.Edits,
+                AlreadyRegistered = registrations.AlreadyRegistered,
                 SkippedProperties = entity.Properties.Where(p => p.IsSkipped).ToList(),
                 IdentityBoundProperties = entity.Properties.Where(p => p.IsIdentityBound).ToList()
             });
@@ -47,15 +52,15 @@ namespace Uludag.Generator.Generation
         public static void Apply(GenerationPlan plan)
         {
             foreach (PlannedFile file in plan.Files)
-                Write(file.Path, file.Content);
+                Write(file.Path, file.Content, Utf8NoBom);
             foreach (PlannedEdit edit in plan.Edits)
-                Write(edit.Path, edit.Content);
+                Write(edit.Path, edit.Content, edit.Bom ? Utf8WithBom : Utf8NoBom);
         }
 
-        private static void Write(string path, string content)
+        private static void Write(string path, string content, Encoding encoding)
         {
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-            File.WriteAllText(path, content, Utf8NoBom);
+            File.WriteAllText(path, content, encoding);
         }
 
         // Spec R-2: 16 dosya, Product/Order ile aynı yol ve ad düzeninde.
