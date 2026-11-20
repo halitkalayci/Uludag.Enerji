@@ -1,6 +1,6 @@
 # Spec 0008 — Fake ödeme entegrasyonu
 
-- Status: In progress
+- Status: Shipped
 - Mode: lite
 - Plan: `specs/plans/0008-plan.md`
 - Self-critique: done
@@ -61,7 +61,7 @@ toplama, iade/iptal, ödeme kaydı veya ödeme durumu alanı, sipariş güncelle
   mevcut ekranın davranışı korunur.
 
 ## Constraints & out of scope
-- Sensitive area: yok (K-7).
+- Sensitive area: none (hassas alan yok — K-7).
 - Out of scope: gerçek ödeme sağlayıcısı; kart/ödeme bilgisi toplama; iade, iptal, kısmi ödeme;
   ödeme kaydı, işlem numarası, sipariş üzerinde ödeme durumu alanı; ödeme denemelerinin
   raporlanması/loglanması; deneme sayısı sınırı; ödeme onaylandıktan sonra kaydın teknik bir
@@ -70,25 +70,23 @@ toplama, iade/iptal, ödeme kaydı veya ödeme durumu alanı, sipariş güncelle
   değil fake ödeme getirir; kapsam dışı maddesi değişmez.
 
 ## Acceptance criteria
-- [ ] AC-1 — Ret oranı 0 iken geçerli bir sipariş isteği başarılı döner; sipariş kullanıcının
+- [x] AC-1 — Ret oranı 0 iken geçerli bir sipariş isteği başarılı döner; sipariş kullanıcının
   siparişlerinde kalemleriyle görünür ve her ürünün stoğu kalem adedi kadar düşer.
-- [ ] AC-2 — Ret oranı 1 iken geçerli bir sipariş isteği 400 ve "Ödeme reddedildi. Lütfen tekrar
+- [x] AC-2 — Ret oranı 1 iken geçerli bir sipariş isteği 400 ve "Ödeme reddedildi. Lütfen tekrar
   deneyin." mesajıyla döner; kullanıcının sipariş sayısı değişmez ve hiçbir ürünün stoğu değişmez.
-- [ ] AC-3 — Ödemeye giden tutar ve para birimi, siparişin sunucuda hesaplanan toplamı ve para
+- [x] AC-3 — Ödemeye giden tutar ve para birimi, siparişin sunucuda hesaplanan toplamı ve para
   birimiyle aynıdır (çok kalemli, aynı üründen birden fazla kalemli bir siparişle doğrulanır).
-- [ ] AC-4 — Doğrulamadan geçemeyen istekler (kalemsiz, adet ≤ 0, olmayan ürün, yetersiz stok,
+- [x] AC-4 — Doğrulamadan geçemeyen istekler (kalemsiz, adet ≤ 0, olmayan ürün, yetersiz stok,
   para birimi uyuşmazlığı) bugünkü hatalarını döner ve hiç ödeme denenmez — ret oranı 1 iken de
   ödeme mesajı değil, kendi mesajları gelir.
-- [ ] AC-5 — Ret oranının varsayılanı 0,25'tir: ödeme bileşeni varsayılan ayarla 10.000 denemede
+- [x] AC-5 — Ret oranının varsayılanı 0,25'tir: ödeme bileşeni varsayılan ayarla 10.000 denemede
   %23 ile %27 arasında ret üretir.
-- [ ] AC-6 — Ret oranı 0–1 aralığı dışında (ör. -0,1 veya 1,5) yapılandırılırsa uygulama açılmaz
+- [x] AC-6 — Ret oranı 0–1 aralığı dışında (ör. -0,1 veya 1,5) yapılandırılırsa uygulama açılmaz
   ve hata ayarın adını söyler.
-- [ ] AC-7 — Sipariş güncelleme, silme ve kalem ekleme/güncelleme/silme ret oranı 1 iken de bugünkü
+- [x] AC-7 — Sipariş güncelleme, silme ve kalem ekleme/güncelleme/silme ret oranı 1 iken de bugünkü
   gibi çalışır (ödeme denenmez).
-- [ ] AC-8 — Sepet ekranı: ödeme reddedilince hata mesajı görünür, sepetin içeriği değişmez,
-  "Sipariş ver" butonu tekrar etkin olur; aynı sepetle tekrar deneme onaylanırsa bugünkü başarı
-  akışı çalışır.
-- [ ] AC-9 — `docs/domain.md` ödeme terimini ve BR-12'yi (ödeme reddedilen sipariş oluşmaz, stok
+- [ ] ~~AC-8 — Sepet ekranı: ödeme reddedilince hata mesajı görünür, sepetin içeriği değişmez, "Sipariş ver" butonu tekrar etkin olur; aynı sepetle tekrar deneme onaylanırsa bugünkü başarı akışı çalışır.~~ → moved to B-29 | spec 0008 — Halit Enes Kalaycı, 2026-11-20, VERIFY insan kararıyla atlandı; UI kriteri ekran görüntüsü olmadan kanıtlanamaz (R-08)
+- [x] AC-9 — `docs/domain.md` ödeme terimini ve BR-12'yi (ödeme reddedilen sipariş oluşmaz, stok
   değişmez; tutarı sunucu belirler) içerir.
 
 ## Self-critique (öneriler onaylandı ve katlandı — 2026-11-20)
@@ -108,17 +106,17 @@ toplama, iade/iptal, ödeme kaydı veya ödeme durumu alanı, sipariş güncelle
   (Order locale dosyaları). *Öneri:* İngilizce karşılığı "Payment was declined. Please try again."
 
 ## Definition of Done
-- [ ] Every acceptance criterion mapped to proof (test or reproducible observation)
-- [ ] `scripts/check` green
-- [ ] Independent review done; real findings fixed, noise rejected with written rationale, deferred ones in `specs/backlog.md`
-- [ ] Docs / ADRs updated if behavior or architecture changed
-- [ ] Spec moved to `specs/done/` (it becomes immutable there)
+- [x] Every acceptance criterion mapped to proof (test or reproducible observation) — AC-1…AC-7, AC-9 plan haritasındaki testlerle; AC-8 B-29'a taşındı. Bağımsız VERIFY tablosu **yok**: VERIFY insan kararıyla atlandı (2026-11-20, plan `## Triage`); kanıt, full green + bağımsız review'ın kriter kriter okumasıdır
+- [x] `scripts/check` green — CHECK GREEN (full, 5 steps, 87 s) @c4ab568 + CI (plan `## Build evidence`)
+- [x] Independent review done; real findings fixed, noise rejected with written rationale, deferred ones in `specs/backlog.md` — review round 1: 2 Low + 1 Info, üçü de fix-1'de düzeltildi
+- [x] Docs / ADRs updated if behavior or architecture changed — `docs/domain.md` (Payment, BR-12), `docs/architecture.md`, `docs/testing.md`, `docs/conventions.md` (Known traps)
+- [x] Spec moved to `specs/done/` (it becomes immutable there)
 
 ## Scorecard (fill at ship — honest numbers make the process improvable)
 | Metric | Value |
 |---|---|
-| Spec revisions | |
-| Fix rounds | |
-| Review findings: real / noise / deferred | |
-| Regressions introduced | |
-| Bugs escaped to production | |
+| Spec revisions | 0 (Draft → Approved tek seferde; öneriler katlandı) |
+| Fix rounds | 1 |
+| Review findings: real / noise / deferred | 3 / 0 / 0 |
+| Regressions introduced | 0 (full: 49 entegrasyon + 86 fast test yeşil) |
+| Bugs escaped to production | — (henüz bilinmiyor) |
