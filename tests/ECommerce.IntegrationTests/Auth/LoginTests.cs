@@ -65,8 +65,9 @@ namespace ECommerce.IntegrationTests.Auth
 
             Assert.Equal(unknownEmail.GetProperty("title").GetString(), wrongPassword.GetProperty("title").GetString());
             Assert.Equal(unknownEmail.GetProperty("detail").GetString(), wrongPassword.GetProperty("detail").GetString());
-            Assert.False(unknownEmail.TryGetProperty("multiFactorToken", out _));
-            Assert.False(wrongPassword.TryGetProperty("multiFactorToken", out _));
+            // Gövdede hiçbir yazımla MFA token'ı bulunmaz (alan adı büyük/küçük harf duyarsız aranır).
+            Assert.DoesNotContain("multiFactorToken", unknownEmail.GetRawText(), StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("multiFactorToken", wrongPassword.GetRawText(), StringComparison.OrdinalIgnoreCase);
         }
     }
 }
