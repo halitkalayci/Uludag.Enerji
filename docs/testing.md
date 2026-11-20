@@ -13,7 +13,7 @@
 ## Frameworks & layout
 | Katman | Araç | Proje / yer | Profil |
 |---|---|---|---|
-| Unit | xUnit + NSubstitute | `tests/Uludag.Core.Tests`, `tests/ECommerce.Application.UnitTests` | `[fast]` |
+| Unit | xUnit + NSubstitute | `tests/Uludag.Core.Tests`, `tests/ECommerce.Application.UnitTests`, `tests/ECommerce.Infrastructure.UnitTests` | `[fast]` |
 | Mimari | NetArchTest | `tests/ECommerce.ArchitectureTests` | `[fast]` |
 | Entegrasyon | `WebApplicationFactory` + Testcontainers (SQL Server, Redis) | `tests/ECommerce.IntegrationTests`, `[Trait("Category","Integration")]` | full-only (Docker) |
 | Client | `ng test` (Angular 22 Vitest) | `ECommerce/client/src/**/*.spec.ts` | `[fast]` |
@@ -33,7 +33,7 @@
   container aynı adım içinde durdurulur.
 
 ## What must be tested
-- Her iş kuralı BR-1…BR-14 (`docs/domain.md`) — Rules sınıfı unit testi, gerekirse handler/entegrasyon.
+- Her iş kuralı BR-1…BR-15 (`docs/domain.md`) — Rules sınıfı unit testi, gerekirse handler/entegrasyon.
 - F-1…F-5 (`docs/architecture.md`) — mimari test.
 - Kimlik ve yetki (hassas alan): 401/403 yolları, MFA kilidi, refresh token reuse tespiti — entegrasyon.
 - HTTP sözleşmesi: exception → durum kodu eşlemesi (404/400/401/403/500, ProblemDetails gövdesi).

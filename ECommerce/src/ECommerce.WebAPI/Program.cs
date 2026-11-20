@@ -1,4 +1,6 @@
 using ECommerce.Application;
+using ECommerce.Infrastructure;
+using ECommerce.Infrastructure.Payment;
 using ECommerce.Persistence;
 using ECommerce.Persistence.Seeds;
 using ECommerce.WebAPI.Middlewares;
@@ -28,6 +30,11 @@ builder.Services.AddApplicationServices();
 string connectionString = builder.Configuration.GetConnectionString("ECommerce")
     ?? throw new InvalidOperationException("appsettings'te 'ConnectionStrings:ECommerce' bulunamadı.");
 builder.Services.AddPersistenceServices(connectionString);
+
+// Dış servisler -> ECommerce.Infrastructure. Şimdilik yalnız fake ödeme (spec 0008): her sipariş denemesi
+// "FakePayment:DeclineRate" olasılığıyla (varsayılan 0.25) reddedilir. 0..1 dışındaki değerle uygulama açılmaz.
+FakePaymentOptions? fakePaymentOptions = builder.Configuration.GetSection(FakePaymentOptions.SectionName).Get<FakePaymentOptions>();
+builder.Services.AddInfrastructureServices(fakePaymentOptions);
 
 // Cache -> Uludag.Core (ICacheService).
 // "RedisOptions:ConnectionString" doluysa Redis (docker-compose), boşsa / yoksa in-memory.

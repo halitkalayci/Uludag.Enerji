@@ -2,6 +2,7 @@ using ECommerce.Application.Features.Order.Commands.Create;
 using ECommerce.Application.Features.Order.Commands.Update;
 using ECommerce.Application.Features.Order.Queries;
 using ECommerce.Application.Features.OrderItem.Mappers;
+using ECommerce.Application.Services.PaymentService;
 
 namespace ECommerce.Application.Features.Order.Mappers
 {
@@ -33,6 +34,12 @@ namespace ECommerce.Application.Features.Order.Mappers
             order.TotalPrice = new Domain.ValueObjects.Money(order.Items.Sum(i => i.TotalPrice.Amount), command.Currency);
 
             return order;
+        }
+
+        // Ödeme isteği: tutar siparişin sunucuda hesaplanan toplamı, sahibi siparişin sahibi (BR-15, spec 0008).
+        public static PaymentRequest MapOrderToPaymentRequest(Domain.Entities.Order order)
+        {
+            return new PaymentRequest(order.UserId, order.TotalPrice);
         }
 
         // Var olan entity'nin üzerine yazar. TotalPrice burada güncellenmez; kalemlerden hesaplanır.

@@ -19,6 +19,7 @@
 | TokenSession | JWT'nin işaret ettiği, Redis/in-memory cache'te tutulan oturum (kullanıcı id, e-posta, yetkiler) | JWT yalnızca oturum anahtarı taşır |
 | MFA / OTP Authenticator | TOTP tabanlı iki adımlı doğrulama kaydı | Login önce kısa ömürlü MFA token'ı döner |
 | RefreshToken | Yeni JWT almak için kullanılan, yalnızca SHA-256 özeti saklanan token | — |
+| Payment (Ödeme, fake) | Sipariş oluşturulurken siparişin toplamı için yapılan tahsilat denemesi; gerçek sağlayıcı yok, `FakePayment:DeclineRate` olasılığıyla (varsayılan 0,25) reddedilir | Ödeme kaydı/durumu tutulmaz; iade yok |
 | Family (Token ailesi) | Tek bir girişten türeyen tüm refresh token'lar (`FamilyId`) | Reuse tespitinde aile topluca iptal edilir |
 
 ## Business rules
@@ -38,11 +39,13 @@
   çiftleri farklı sayılır ("IŞIK" ≠ "ışık"); karar bekliyor (B-27).
 - **BR-13** Bir ürünün sıfır ya da bir kategorisi vardır; verilen kategori var olmalıdır.
 - **BR-14** Kendisine bağlı ürünü olan kategori silinemez.
+- **BR-15** Sipariş, tüm doğrulamalardan sonra siparişin sunucuda hesaplanan toplamı ve para birimi için ödeme denenerek oluşturulur; ödeme reddedilirse sipariş oluşmaz ve stok değişmez (`PaymentDeclined`). Sipariş güncelleme/silme ve kalem işlemleri ödeme denemez (spec 0008; spec metninde BR-12 adıyla geçer — numara spec 0009 ile çakıştı).
 
 ## Key domain invariants
 - Stok asla negatife düşmez (BR-4).
 - Bir siparişin sahibi asla istemci girdisinden atanmaz (BR-5).
 - Şifre ve refresh token düz metin olarak saklanmaz (BR-10, `docs/security.md`).
+- Ödemesi reddedilmiş bir sipariş kaydı yoktur; ödeme reddi stoğu değiştirmez (BR-15).
 
 ## Sensitive areas
 - **Kimlik ve yetki** — şifre hash'leme, JWT/TokenSession, MFA/OTP, refresh token rotasyonu, operation
@@ -50,4 +53,4 @@
   `Uludag.Core/Mediation/Behaviors/{Authentication,Authorization}Behavior.cs`, WebAPI'deki JwtBearer
   kurulumu ve `ISecuredRequest`/`IAllowAnonymousRequest` işaretleri. Bu alana dokunan spec
   Constraints'te `Sensitive area: Kimlik ve yetki` yazar.
-- Sipariş/stok/para hassas alan **değil** (gerçek ödeme yok; normal süreç yeterli).
+- Sipariş/stok/para hassas alan **değil** (gerçek ödeme yok — ödeme fake, spec 0008; normal süreç yeterli).

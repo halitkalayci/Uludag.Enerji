@@ -10,5 +10,6 @@ namespace ECommerce.Application.Features.Order.Constants
     {
         public const string OrderNotFound = "OrderNotFound";
         public const string OrderMustContainAtLeastOneItem = "OrderMustContainAtLeastOneItem";
+        public const string PaymentDeclined = "PaymentDeclined";
     }
 }
