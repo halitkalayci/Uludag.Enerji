@@ -1,6 +1,6 @@
 # Spec 0002 — Auth: hesap ve giriş testleri
 
-- Status: In progress
+- Status: Shipped
 - Mode: lite
 - Plan: `specs/plans/0002-plan.md`
 - Self-critique: done
@@ -71,31 +71,31 @@ none — no user interface
   2026-11-20.
 
 ## Acceptance criteria
-- [ ] AC-1 — Kayıt: daha önce kullanılmamış geçerli e-posta ve şifreyle kayıt başarılı olur; kullanıcı kalıcı olarak oluşur ve şifre düz metin olarak hiçbir yerde saklanmaz (kayıtta şifre metni bulunmaz, hash ve salt doludur).
-- [ ] AC-2 — BR-8 benzersizlik: kayıtlı bir e-posta ile — aynı yazımla da, yalnızca büyük/küçük harfi farklı yazımla da — yapılan kayıt 400 ProblemDetails ile reddedilir ve ikinci kullanıcı oluşmaz.
-- [ ] AC-3 — Eşzamanlı kayıt: aynı e-postayla aynı anda gönderilen 10 kayıt isteğinden tam olarak biri başarılı olur, diğerleri 400 ile reddedilir; sonunda o e-postayla tam olarak bir kullanıcı vardır.
-- [ ] AC-4 — Geçersiz kayıt girdisi: e-posta ya da şifre eksik veya boşsa, ya da e-posta biçimi açıkça geçersizse (`abc`, `a@`, `@x.com`, `a b@x.com`) kayıt 400 ProblemDetails ile reddedilir ve kullanıcı oluşmaz.
-- [ ] AC-5 — Giriş (doğru bilgiler): yalnızca e-posta ve şifre gönderilen giriş başarılı olur ve erişim token'ı değil, süreli (gelecekte biten, UTC) bir MFA token'ı döner; MFA'sı henüz kurulmamış kullanıcı için durum "kurulum gerekli", kurulu kullanıcı için "kod gerekli"dir.
-- [ ] AC-6 — BR-8 giriş hatası: kayıtlı olmayan e-posta ile ve kayıtlı e-postanın yanlış şifresiyle yapılan girişler aynı 400 yanıtını verir (durum kodu, başlık ve mesaj birebir aynı; yanıt süresi karşılaştırılmaz); hiçbiri MFA token'ı döndürmez — yanıttan kullanıcının var olup olmadığı anlaşılamaz.
-- [ ] AC-7 — MFA kurulumu: geçerli bir MFA token'ıyla kurulum, doğrulayıcı uygulamaya eklenebilecek bir gizli anahtar ve TOTP biçiminde (`otpauth://totp/` ile başlayan), kullanıcının e-postasını ve ayarlardaki uygulama adını (issuer) içeren bir anahtar URI'si döner; geçersiz/bilinmeyen MFA token'ı ile ve MFA'sı zaten doğrulanmış kullanıcı için kurulum 400 ile reddedilir; doğrulamadan önce kurulum tekrarlanırsa yalnızca son anahtarın kodu kabul edilir.
-- [ ] AC-8 — MFA doğrulama (başarılı): doğru TOTP koduyla doğrulama erişim token'ı ve refresh token'ı (bitiş zamanlarıyla) döner; erişim token'ı yalnızca kimlik doğrulama isteyen çıkış isteğini geçirir (token olmadan aynı istek 401); kullanılan MFA token'ı ikinci kez kullanılamaz (400); refresh token'ın kendisi saklanmaz, yalnızca SHA-256 özeti saklanır; doğrulama sonrası kullanıcının MFA'sı "kurulu" sayılır (sonraki giriş "kod gerekli" döner).
-- [ ] AC-9 — MFA doğrulama (reddedilen kod): yanlış kod, 6 haneli rakam olmayan kod ve daha önce başarıyla kullanılmış geçerli bir kodun tekrarı 400 ile reddedilir ve token dönmez.
-- [ ] AC-10 — BR-9 kilit: hatalı denemeler kullanıcı başına sayılır ve MFA oturumları arasında toplanır (ör. bir oturumda 3, yeni bir girişle açılan diğerinde 2); toplam 5 hatalı denemeden sonra 6. deneme — kod doğru olsa bile — 400 ile reddedilir ve token dönmez; yeni MFA oturumu sayacı sıfırlamaz; kilidin süresi 15 dakikadır (ölçülür, beklenmez); limite ulaşmadan yapılan başarılı doğrulama sayacı sıfırlar.
-- [ ] AC-11 — Beklenmeyen hata: bir Auth isteği sırasında beklenmeyen bir sunucu hatası oluştuğunda (testte bir bağımlılığın hata fırlatan test ikiziyle değiştirilmesiyle üretilir; mevcut bir kod hatasına dayanılmaz) yanıt 500, `application/problem+json`'dur ve gövdede istisna tipi, yığın izi ya da iç hata mesajı bulunmaz.
-- [ ] AC-12 — Coverage: Auth kodunun (hesap/giriş/MFA akışları, Auth kuralları, ilgili güvenlik yardımcıları ve hata eşleme) bu spec'in testleriyle ölçülen satır ve dal coverage oranı, yeniden üretme komutuyla birlikte raporlanır; rapor dosyası repoda değildir.
+- [x] AC-1 — Kayıt: daha önce kullanılmamış geçerli e-posta ve şifreyle kayıt başarılı olur; kullanıcı kalıcı olarak oluşur ve şifre düz metin olarak hiçbir yerde saklanmaz (kayıtta şifre metni bulunmaz, hash ve salt doludur).
+- [x] AC-2 — BR-8 benzersizlik: kayıtlı bir e-posta ile — aynı yazımla da, yalnızca büyük/küçük harfi farklı yazımla da — yapılan kayıt 400 ProblemDetails ile reddedilir ve ikinci kullanıcı oluşmaz.
+- [x] AC-3 — Eşzamanlı kayıt: aynı e-postayla aynı anda gönderilen 10 kayıt isteğinden tam olarak biri başarılı olur, diğerleri 400 ile reddedilir; sonunda o e-postayla tam olarak bir kullanıcı vardır.
+- [x] AC-4 — Geçersiz kayıt girdisi: e-posta ya da şifre eksik veya boşsa, ya da e-posta biçimi açıkça geçersizse (`abc`, `a@`, `@x.com`, `a b@x.com`) kayıt 400 ProblemDetails ile reddedilir ve kullanıcı oluşmaz.
+- [x] AC-5 — Giriş (doğru bilgiler): yalnızca e-posta ve şifre gönderilen giriş başarılı olur ve erişim token'ı değil, süreli (gelecekte biten, UTC) bir MFA token'ı döner; MFA'sı henüz kurulmamış kullanıcı için durum "kurulum gerekli", kurulu kullanıcı için "kod gerekli"dir.
+- [x] AC-6 — BR-8 giriş hatası: kayıtlı olmayan e-posta ile ve kayıtlı e-postanın yanlış şifresiyle yapılan girişler aynı 400 yanıtını verir (durum kodu, başlık ve mesaj birebir aynı; yanıt süresi karşılaştırılmaz); hiçbiri MFA token'ı döndürmez — yanıttan kullanıcının var olup olmadığı anlaşılamaz.
+- [x] AC-7 — MFA kurulumu: geçerli bir MFA token'ıyla kurulum, doğrulayıcı uygulamaya eklenebilecek bir gizli anahtar ve TOTP biçiminde (`otpauth://totp/` ile başlayan), kullanıcının e-postasını ve ayarlardaki uygulama adını (issuer) içeren bir anahtar URI'si döner; geçersiz/bilinmeyen MFA token'ı ile ve MFA'sı zaten doğrulanmış kullanıcı için kurulum 400 ile reddedilir; doğrulamadan önce kurulum tekrarlanırsa yalnızca son anahtarın kodu kabul edilir.
+- [x] AC-8 — MFA doğrulama (başarılı): doğru TOTP koduyla doğrulama erişim token'ı ve refresh token'ı (bitiş zamanlarıyla) döner; erişim token'ı yalnızca kimlik doğrulama isteyen çıkış isteğini geçirir (token olmadan aynı istek 401); kullanılan MFA token'ı ikinci kez kullanılamaz (400); refresh token'ın kendisi saklanmaz, yalnızca SHA-256 özeti saklanır; doğrulama sonrası kullanıcının MFA'sı "kurulu" sayılır (sonraki giriş "kod gerekli" döner).
+- [x] AC-9 — MFA doğrulama (reddedilen kod): yanlış kod, 6 haneli rakam olmayan kod ve daha önce başarıyla kullanılmış geçerli bir kodun tekrarı 400 ile reddedilir ve token dönmez.
+- [x] AC-10 — BR-9 kilit: hatalı denemeler kullanıcı başına sayılır ve MFA oturumları arasında toplanır (ör. bir oturumda 3, yeni bir girişle açılan diğerinde 2); toplam 5 hatalı denemeden sonra 6. deneme — kod doğru olsa bile — 400 ile reddedilir ve token dönmez; yeni MFA oturumu sayacı sıfırlamaz; kilidin süresi 15 dakikadır (ölçülür, beklenmez); limite ulaşmadan yapılan başarılı doğrulama sayacı sıfırlar.
+- [x] AC-11 — Beklenmeyen hata: bir Auth isteği sırasında beklenmeyen bir sunucu hatası oluştuğunda (testte bir bağımlılığın hata fırlatan test ikiziyle değiştirilmesiyle üretilir; mevcut bir kod hatasına dayanılmaz) yanıt 500, `application/problem+json`'dur ve gövdede istisna tipi, yığın izi ya da iç hata mesajı bulunmaz.
+- [x] AC-12 — Coverage: Auth kodunun (hesap/giriş/MFA akışları, Auth kuralları, ilgili güvenlik yardımcıları ve hata eşleme) bu spec'in testleriyle ölçülen satır ve dal coverage oranı, yeniden üretme komutuyla birlikte raporlanır; rapor dosyası repoda değildir.
 
 ## Definition of Done
-- [ ] Every acceptance criterion mapped to proof (test or reproducible observation)
-- [ ] `scripts/check` green
-- [ ] Independent review done; real findings fixed, noise rejected with written rationale, deferred ones in `specs/backlog.md`
-- [ ] Docs / ADRs updated if behavior or architecture changed
-- [ ] Spec moved to `specs/done/` (it becomes immutable there)
+- [x] Every acceptance criterion mapped to proof (test or reproducible observation)
+- [x] `scripts/check` green
+- [x] Independent review done; real findings fixed, noise rejected with written rationale, deferred ones in `specs/backlog.md`
+- [x] Docs / ADRs updated if behavior or architecture changed
+- [x] Spec moved to `specs/done/` (it becomes immutable there)
 
 ## Scorecard (fill at ship — honest numbers make the process improvable)
 | Metric | Value |
 |---|---|
-| Spec revisions | |
-| Fix rounds | |
-| Review findings: real / noise / deferred | |
-| Regressions introduced | |
-| Bugs escaped to production | |
+| Spec revisions | 0 (öz-eleştiri G-1…G-8 onay öncesi işlendi) |
+| Fix rounds | 2 test fix round'u (fix-1, fix-2) + 5 `/fix-bug` lane'i (A-1, A-8, A-4 [+fix-1], A-2, A-3+A-7) |
+| Review findings: real / noise / deferred | 10 / 6 / 14 (B-7…B-23; triage: plan `## Triage`) |
+| Regressions introduced | 0 |
+| Bugs escaped to production | — (ship anında bilinmiyor). Not: testler 6 mevcut kod hatasını yakaladı ve düzeltildi (A-1 giriş 500, A-2, A-3, A-4, A-7, A-8) |
