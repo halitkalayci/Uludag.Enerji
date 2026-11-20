@@ -31,6 +31,8 @@ namespace ECommerce.Application.Features.Category.Commands.Update
             {
                 Domain.Entities.Category? category = await categoryRepository.GetByIdAsync(request.Id, cancellationToken);
                 categoryBusinessRules.CategoryShouldExistWhenSelected(category);
+                categoryBusinessRules.CategoryNameShouldBeValid(request.Name);
+                await categoryBusinessRules.CategoryNameCannotExist(request.Name, category.Id, cancellationToken);
 
                 CategoryMapper.MapUpdateCommandToCategory(request, category);
 

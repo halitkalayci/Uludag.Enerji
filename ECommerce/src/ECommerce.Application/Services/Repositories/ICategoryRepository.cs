@@ -7,6 +7,8 @@ namespace ECommerce.Application.Services.Repositories
     {
         Task<List<Domain.Entities.Category>> GetAllAsync(CancellationToken cancellationToken = default);
         Task<Domain.Entities.Category?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+        // Karşılaştırma kolonun collation'ıyla yapılır: büyük/küçük harf duyarsız (BR-12).
+        Task<Domain.Entities.Category?> GetByNameAsync(string name, CancellationToken cancellationToken = default);
         Task AddAsync(Domain.Entities.Category category, CancellationToken cancellationToken = default);
         Task UpdateAsync(Domain.Entities.Category category, CancellationToken cancellationToken = default);
         Task DeleteAsync(Domain.Entities.Category category, CancellationToken cancellationToken = default);

@@ -21,5 +21,8 @@ namespace ECommerce.Application.Services.ProductService
         Task ChangeStockByAmountDifferenceAsync(Domain.Entities.Product product, int amountDifference, CancellationToken cancellationToken = default);
         // Stok iadesi: ürün bu arada silinmişse iade edilecek stok yoktur, hiçbir şey yapılmaz.
         Task IncreaseStockIfProductExistsAsync(Guid productId, int amount, CancellationToken cancellationToken = default);
+
+        // Kategoriye bağlı en az bir ürün var mı? (Category silme kuralı BR-14 ürün tablosuna bu kapıdan bakar.)
+        Task<bool> AnyInCategoryAsync(Guid categoryId, CancellationToken cancellationToken = default);
     }
 }

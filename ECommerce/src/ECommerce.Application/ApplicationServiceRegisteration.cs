@@ -1,4 +1,5 @@
-﻿using ECommerce.Application.Features.Product.Commands.Create;
+using ECommerce.Application.Services.CategoryService;
+using ECommerce.Application.Features.Product.Commands.Create;
 using ECommerce.Application.Features.Product.Rules;
 using ECommerce.Application.Services.OrderService;
 using ECommerce.Application.Services.ProductService;
@@ -32,6 +33,8 @@ namespace ECommerce.Application
             services.AddScoped<IProductService, ProductManager>();
 
             services.AddScoped<IOrderService, OrderManager>();
+
+            services.AddScoped<ICategoryService, CategoryManager>();
 
             // kodda satırı 100x > 1
             services.AddSubClassesOfType(Assembly.GetExecutingAssembly(), typeof(BaseBusinessRules));

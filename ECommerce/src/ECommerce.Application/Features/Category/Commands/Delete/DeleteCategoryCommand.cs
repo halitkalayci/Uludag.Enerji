@@ -6,7 +6,7 @@ using Uludag.Core.Mediation;
 namespace ECommerce.Application.Features.Category.Commands.Delete
 {
     // uludag-gen ile üretildi (spec 0005); serbestçe düzenlenebilir.
-    // Kayıt bulunamazsa NotFoundException fırlar (404).
+    // Kayıt bulunamazsa NotFoundException fırlar (404); ürünü olan kategori silinemez (BR-14, 400).
     public class DeleteCategoryCommand : IRequest, ISecuredRequest
     {
         // Yetki: Category.Admin, Category.Write veya Category.Delete claim'lerinden biri yeterli (global Admin her zaman geçer).
@@ -29,6 +29,7 @@ namespace ECommerce.Application.Features.Category.Commands.Delete
             {
                 Domain.Entities.Category? category = await categoryRepository.GetByIdAsync(request.Id, cancellationToken);
                 categoryBusinessRules.CategoryShouldExistWhenSelected(category);
+                await categoryBusinessRules.CategoryShouldHaveNoProducts(category.Id, cancellationToken);
 
                 await categoryRepository.DeleteAsync(category, cancellationToken);
             }

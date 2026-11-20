@@ -1,5 +1,6 @@
 using ECommerce.Application.Features.Category.Constants;
 using ECommerce.Application.Features.Category.Mappers;
+using ECommerce.Application.Features.Category.Rules;
 using ECommerce.Application.Services.Repositories;
 using Uludag.Core.Mediation;
 
@@ -18,13 +19,18 @@ namespace ECommerce.Application.Features.Category.Commands.Create
         public class CreateCategoryCommandHandler : IRequestHandler<CreateCategoryCommand>
         {
             private readonly ICategoryRepository categoryRepository;
-            public CreateCategoryCommandHandler(ICategoryRepository categoryRepository)
+            private readonly CategoryBusinessRules categoryBusinessRules;
+            public CreateCategoryCommandHandler(ICategoryRepository categoryRepository, CategoryBusinessRules categoryBusinessRules)
             {
                 this.categoryRepository = categoryRepository;
+                this.categoryBusinessRules = categoryBusinessRules;
             }
 
             public async Task Handle(CreateCategoryCommand request, CancellationToken cancellationToken)
             {
+                categoryBusinessRules.CategoryNameShouldBeValid(request.Name);
+                await categoryBusinessRules.CategoryNameCannotExist(request.Name, cancellationToken: cancellationToken);
+
                 Domain.Entities.Category category = CategoryMapper.MapCreateCommandToCategory(request);
 
                 await categoryRepository.AddAsync(category, cancellationToken);

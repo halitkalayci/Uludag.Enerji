@@ -11,5 +11,6 @@ namespace ECommerce.Application.Services.Repositories
         Task AddAsync(Domain.Entities.Product product, CancellationToken cancellationToken = default);
         Task UpdateAsync(Domain.Entities.Product product, CancellationToken cancellationToken = default);
         Task DeleteAsync(Domain.Entities.Product product, CancellationToken cancellationToken = default);
+        Task<bool> AnyInCategoryAsync(Guid categoryId, CancellationToken cancellationToken = default);
     }
 }

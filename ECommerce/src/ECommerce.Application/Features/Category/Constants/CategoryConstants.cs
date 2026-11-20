@@ -5,5 +5,9 @@ namespace ECommerce.Application.Features.Category.Constants
     public static class CategoryConstants
     {
         public const string CategoryNotFound = "CategoryNotFound";
+        public const string CategoryNameCannotBeEmpty = "CategoryNameCannotBeEmpty";
+        public const string CategoryNameTooLong = "CategoryNameTooLong";
+        public const string CategoryNameAlreadyExists = "CategoryNameAlreadyExists";
+        public const string CategoryHasProducts = "CategoryHasProducts";
     }
 }

@@ -10,16 +10,17 @@ namespace ECommerce.Application.Features.Category.Mappers
     {
         public static Domain.Entities.Category MapCreateCommandToCategory(CreateCategoryCommand command)
         {
+            // Baştaki/sondaki boşluklar kırpılarak saklanır (spec 0009, R-2).
             return new Domain.Entities.Category
             {
-                Name = command.Name
+                Name = command.Name.Trim()
             };
         }
 
         // Var olan (DB'den gelen, EF tarafından takip edilen) entity'nin üzerine yazar; yeni instance oluşturmaz.
         public static void MapUpdateCommandToCategory(UpdateCategoryCommand command, Domain.Entities.Category category)
         {
-            category.Name = command.Name;
+            category.Name = command.Name.Trim();
         }
 
         public static CategoryResponse MapCategoryToResponse(Domain.Entities.Category category)
