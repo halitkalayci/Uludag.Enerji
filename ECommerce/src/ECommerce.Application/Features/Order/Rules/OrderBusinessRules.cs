@@ -1,5 +1,6 @@
 using ECommerce.Application.Exceptions;
 using ECommerce.Application.Features.Order.Constants;
+using ECommerce.Application.Services.PaymentService;
 using System.Diagnostics.CodeAnalysis;
 
 namespace ECommerce.Application.Features.Order.Rules
@@ -22,6 +23,13 @@ namespace ECommerce.Application.Features.Order.Rules
         {
             if (items is null || items.Count == 0)
                 throw new BusinessException(OrderConstants.OrderMustContainAtLeastOneItem);
+        }
+
+        // BR-12: Ödemesi reddedilen sipariş oluşmaz (spec 0008).
+        public void PaymentShouldBeApproved(PaymentResult paymentResult)
+        {
+            if (!paymentResult.IsApproved)
+                throw new BusinessException(OrderConstants.PaymentDeclined);
         }
     }
 }

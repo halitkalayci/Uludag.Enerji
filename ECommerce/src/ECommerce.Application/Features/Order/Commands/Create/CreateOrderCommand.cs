@@ -2,6 +2,7 @@ using ECommerce.Application.Features.Auth.Rules;
 using ECommerce.Application.Features.Order.Mappers;
 using ECommerce.Application.Features.Order.Rules;
 using ECommerce.Application.Features.OrderItem.Rules;
+using ECommerce.Application.Services.PaymentService;
 using ECommerce.Application.Services.ProductService;
 using ECommerce.Application.Services.Repositories;
 using ECommerce.Application.Features.Order.Constants;
@@ -15,6 +16,8 @@ namespace ECommerce.Application.Features.Order.Commands.Create
     // OrderDate, fiyatlar ve siparişin sahibi (UserId) istemciden alınmaz, sunucu belirler.
     // Sahip, isteğin Bearer token'ının oturumundan alınır (başkası adına sipariş verilemez).
     // Her kalemin adedi kadar ürün stoğundan düşülür; stok yetmezse sipariş oluşmaz.
+    // Doğrulamalardan sonra siparişin toplamı için ödeme denenir (spec 0008, BR-12); ödeme reddedilirse
+    // stok düşülmez ve sipariş kaydedilmez — ödeme bu yüzden stok değişikliğinden ÖNCE yapılır.
     public class CreateOrderCommand : IRequest
     {
         // Yetki: Order.Admin, Order.Write veya Order.Create claim'lerinden biri yeterli (global Admin her zaman geçer).
@@ -40,6 +43,7 @@ namespace ECommerce.Application.Features.Order.Commands.Create
             // Kalemleri de bu komut oluşturduğu için OrderItem kuralları da burada geçerlidir.
             private readonly IOrderRepository orderRepository;
             private readonly IProductService productService;
+            private readonly IPaymentService paymentService; // dış sağlayıcı (Infrastructure) -> arayüz üzerinden.
             private readonly OrderBusinessRules orderBusinessRules;
             private readonly OrderItemBusinessRules orderItemBusinessRules;
             private readonly AuthBusinessRules authBusinessRules;
@@ -47,6 +51,7 @@ namespace ECommerce.Application.Features.Order.Commands.Create
             public CreateOrderCommandHandler(
                 IOrderRepository orderRepository,
                 IProductService productService,
+                IPaymentService paymentService,
                 OrderBusinessRules orderBusinessRules,
                 OrderItemBusinessRules orderItemBusinessRules,
                 AuthBusinessRules authBusinessRules,
@@ -54,6 +59,7 @@ namespace ECommerce.Application.Features.Order.Commands.Create
             {
                 this.orderRepository = orderRepository;
                 this.productService = productService;
+                this.paymentService = paymentService;
                 this.orderBusinessRules = orderBusinessRules;
                 this.orderItemBusinessRules = orderItemBusinessRules;
                 this.authBusinessRules = authBusinessRules;
@@ -89,13 +95,18 @@ namespace ECommerce.Application.Features.Order.Commands.Create
                     products[productId] = product;
                 }
 
-                foreach ((Guid productId, int amount) in requestedAmounts)
-                    await productService.DecreaseStockAsync(products[productId], amount, cancellationToken);
-
                 // IDOR - Broken Access Control
                 // Devre dışı 
                 // UserId gibi kimliğe bağlı alanlar -> Asla parametre değil tamamen oturumdan sunucu tarafında atanmalı.
+                // Mapper toplamı sunucudaki fiyatlardan hesaplar; ödenecek tutar budur (istemciden tutar alınmaz).
                 Domain.Entities.Order order = OrderMapper.MapCreateCommandToOrder(request, products, tokenSession.UserId);
+
+                // Ödeme: stok düşülmeden ve sipariş kaydedilmeden önce. Ret -> BusinessException, hiçbir şey değişmez.
+                PaymentResult paymentResult = await paymentService.PayAsync(new PaymentRequest(tokenSession.UserId, order.TotalPrice), cancellationToken);
+                orderBusinessRules.PaymentShouldBeApproved(paymentResult);
+
+                foreach ((Guid productId, int amount) in requestedAmounts)
+                    await productService.DecreaseStockAsync(products[productId], amount, cancellationToken);
 
                 await orderRepository.AddAsync(order, cancellationToken);
             }
