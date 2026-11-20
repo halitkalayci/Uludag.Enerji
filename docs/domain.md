@@ -34,6 +34,8 @@
 - **BR-10** Refresh token her kullanımda döndürülür (rotation); iptal edilmiş bir token yeniden kullanılırsa çalınmış sayılır ve aynı ailenin aktif token'ı da iptal edilir. Token'ın kendisi değil, yalnızca SHA-256 özeti saklanır.
 - **BR-11** Global `Admin` her `ISecuredRequest`'ten geçer; diğer yetkiler `<Entity>.Admin`, `<Entity>.Write` / `<Entity>.Read`, `<Entity>.<İşlem>` desenindedir.
 - **BR-12** Kategori adı zorunludur, kırpılarak saklanır, en fazla 100 karakterdir ve büyük/küçük harf farkı gözetilmeden benzersizdir.
+  V1 sınırı: karşılaştırma Latin harf kurallarıyla (`SQL_Latin1_General_CP1_CI_AS`) yapılır — Türkçe i/İ ve ı/I
+  çiftleri farklı sayılır ("IŞIK" ≠ "ışık"); karar bekliyor (B-27).
 - **BR-13** Bir ürünün sıfır ya da bir kategorisi vardır; verilen kategori var olmalıdır.
 - **BR-14** Kendisine bağlı ürünü olan kategori silinemez.
 
