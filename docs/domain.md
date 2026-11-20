@@ -7,7 +7,8 @@
 
 | Term | Meaning | Notes / not to be confused with |
 |---|---|---|
-| Product (Ürün) | Satılan şey: ad, fiyat (`Money`), stok | Ad benzersiz (BR-6) |
+| Product (Ürün) | Satılan şey: ad, fiyat (`Money`), stok, en fazla bir kategori | Ad benzersiz (BR-6) |
+| Category (Kategori) | Ürünlerin gruplandığı, yönetilebilir ad listesi (spec 0009) | Hiyerarşi yok; ürünün kategorisi isteğe bağlı (BR-13) |
 | Stock (Stok) | Bir ürünün satılabilir adedi (`int`) | Sipariş oluşturulunca düşer (BR-4) |
 | Order (Sipariş) | Bir kullanıcının kalemleriyle birlikte tek seferde kaydedilen siparişi; aggregate kökü | Kalemler ayrı kaydedilmez, Order ile birlikte |
 | OrderItem (Sipariş kalemi) | Siparişteki bir ürün + adet (`Amount`) + kalem toplamı | `Amount` = adet, para değil |
@@ -32,6 +33,9 @@
 - **BR-9** Giriş, MFA (TOTP) doğrulanınca JWT + refresh token verir; hatalı kod denemesi `MaxVerificationAttempts` (5) ile sınırlıdır, aşılınca `LockoutDuration` (15 dk) kilit.
 - **BR-10** Refresh token her kullanımda döndürülür (rotation); iptal edilmiş bir token yeniden kullanılırsa çalınmış sayılır ve aynı ailenin aktif token'ı da iptal edilir. Token'ın kendisi değil, yalnızca SHA-256 özeti saklanır.
 - **BR-11** Global `Admin` her `ISecuredRequest`'ten geçer; diğer yetkiler `<Entity>.Admin`, `<Entity>.Write` / `<Entity>.Read`, `<Entity>.<İşlem>` desenindedir.
+- **BR-12** Kategori adı zorunludur, kırpılarak saklanır, en fazla 100 karakterdir ve büyük/küçük harf farkı gözetilmeden benzersizdir.
+- **BR-13** Bir ürünün sıfır ya da bir kategorisi vardır; verilen kategori var olmalıdır.
+- **BR-14** Kendisine bağlı ürünü olan kategori silinemez.
 
 ## Key domain invariants
 - Stok asla negatife düşmez (BR-4).
