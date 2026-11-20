@@ -20,6 +20,12 @@
 | e2e | yok | — | — |
 
 - Fast/full ayrımı **selector** ile: `--filter "Category!=Integration"` / `--filter "Category=Integration"`.
+- Coverage (spec 0002): `coverlet.collector` (`tests/ECommerce.IntegrationTests`), check'in dışında, eşik yok.
+  `dotnet test tests/ECommerce.IntegrationTests --filter "Category=Integration" --collect "XPlat Code Coverage" --results-directory <repo-dışı-dizin>`
+  → Cobertura XML; oran ilgili sınıflara filtrelenip raporlanır. Rapor repoya konmaz (Evidence policy 2).
+- Auth testleri (spec 0002…): HTTP üzerinden kara kutu; konusu olmayan hazırlık adımları uygulamanın
+  kendi servisleriyle (`tests/ECommerce.IntegrationTests/Infrastructure/AuthArrange.cs`). Beklenti koddan
+  değil iş kurallarından/spec'ten gelir ("koda güvenme").
 - Test adı: `<Metot>_<Durum>_<Beklenen>`; sınıf `<TestEdilen>Tests`. Test projeleri `Uludag.Enerji.slnx`'e eklenir.
 - Determinizm: zaman `FakeTimeProvider` (`Microsoft.Extensions.TimeProvider.Testing`), kültür
   `InvariantCulture`; client testlerinde animasyon kapalı (noop animations); dış servisler stub.

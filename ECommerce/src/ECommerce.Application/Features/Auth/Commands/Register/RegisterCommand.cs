@@ -27,7 +27,9 @@ namespace ECommerce.Application.Features.Auth.Commands.Register
 
             public async Task Handle(RegisterCommand request, CancellationToken cancellationToken)
             {
-                // İş kuralı
+                // Validasyon (girdi) -> iş kuralı (sistem durumu)
+                authBusinessRules.EmailShouldBeValid(request.Email);
+                authBusinessRules.PasswordShouldNotBeEmpty(request.Password);
                 await authBusinessRules.UserEmailCannotExist(request.Email, cancellationToken);
 
                 // Şifreleme -> tamamen Uludag.Core'daki HashingHelper üzerinden.

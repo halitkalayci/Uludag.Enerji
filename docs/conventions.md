@@ -60,6 +60,7 @@
 
 ## Known traps
 <!-- Starts empty. "<trap> — <what to do instead> — from <spec/finding>". Added at triage (Amendment A-n). -->
+- Benzersizlik kuralı yalnızca Rules'ta kontrol-sonra-ekle ile yazılırsa eşzamanlı istekte delinir; `nvarchar(max)` kolona index konamaz — kolona uzunluk + DB unique index ekle, repository'de 2601/2627 ihlalini aynı kuralın `BusinessException`'ına çevir — from spec 0002 / A-2 (review Info-4)
 
 ## Enforced by tooling
 - RS0030 (BannedApiAnalyzers, `Directory.Build.props` + `BannedSymbols.txt`): `FromSqlRaw`,

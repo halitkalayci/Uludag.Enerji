@@ -58,7 +58,8 @@ namespace ECommerce.Application.Features.Auth.Commands.VerifyOtpAuthenticator
 
                 // Önce hak harcanır, sonra kod kontrol edilir (kaba kuvvet koruması).
                 await authBusinessRules.VerificationAttemptShouldBeAllowed(multiFactorSession.UserId);
-                authBusinessRules.AuthenticatorCodeShouldBeValid(otpAuthenticator.SecretKey, request.AuthenticatorCode);
+                long timeStep = authBusinessRules.AuthenticatorCodeShouldBeValid(otpAuthenticator.SecretKey, request.AuthenticatorCode);
+                await authBusinessRules.AuthenticatorCodeShouldNotBeReused(multiFactorSession.UserId, timeStep, cancellationToken);
 
                 Domain.Entities.User? user = await userRepository.GetByIdAsync(multiFactorSession.UserId, cancellationToken);
                 authBusinessRules.UserShouldExistWhenSelected(user);

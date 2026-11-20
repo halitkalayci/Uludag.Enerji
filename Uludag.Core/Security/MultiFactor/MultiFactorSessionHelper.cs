@@ -6,7 +6,8 @@ namespace Uludag.Core.Security.MultiFactor
     // IMultiFactorSessionHelper'ın ICacheService (Redis / in-memory) ile yazılmış hali.
     // Cache anahtarları:
     //   multi-factor-session:{token}           -> UserId, Expiration. TTL = SessionExpiration.
-    //   multi-factor-attempts:{userId}         -> Deneme sayacı. TTL = LockoutDuration (ilk denemede başlar).
+    //   multi-factor-attempts:{userId}         -> Deneme sayacı. TTL = LockoutDuration; ilk denemede başlar ve limit
+    //                                             dolduğunda yeniden kurulur (kilit limitten itibaren tam süre, BR-9).
     public class MultiFactorSessionHelper : IMultiFactorSessionHelper
     {
         private const string SessionCacheKeyPrefix = "multi-factor-session:";
@@ -68,9 +69,16 @@ namespace Uludag.Core.Security.MultiFactor
         public async Task<bool> TryConsumeVerificationAttemptAsync(Guid userId)
         {
             // Sayaç kullanıcı başınadır (oturum başına değil): yeniden login olup yeni token almak hakları sıfırlamaz.
-            long attempt = await cacheService.IncrementAsync(
-                BuildAttemptsCacheKey(userId),
-                TimeSpan.FromMinutes(multiFactorOptions.LockoutDuration));
+            string attemptsKey = BuildAttemptsCacheKey(userId);
+            TimeSpan lockoutDuration = TimeSpan.FromMinutes(multiFactorOptions.LockoutDuration);
+            long attempt = await cacheService.IncrementAsync(attemptsKey, lockoutDuration);
+
+            // Limit tam bu denemede doldu: kilit şimdi başlar ve LockoutDuration boyunca sürer. Denemeler zamana yayılmış
+            // olsa bile kilit, ilk denemeden kalan süre kadar değil, tam süre geçerlidir (BR-9).
+            // Not: artırma ile yeniden yazma ayrı komutlardır; tam bu anda eşzamanlı bir deneme en fazla bir ek hak
+            // kazanabilir (backlog B-9).
+            if (attempt == multiFactorOptions.MaxVerificationAttempts)
+                await cacheService.SetAsync(attemptsKey, attempt, lockoutDuration);
 
             return attempt <= multiFactorOptions.MaxVerificationAttempts;
         }

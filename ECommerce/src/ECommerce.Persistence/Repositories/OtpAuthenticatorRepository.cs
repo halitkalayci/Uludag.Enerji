@@ -49,5 +49,16 @@ namespace ECommerce.Persistence.Repositories
                 .Where(o => o.UserId == userId)
                 .ExecuteUpdateAsync(setters => setters.SetProperty(o => o.IsVerified, true), cancellationToken);
         }
+
+        public async Task<bool> TryUseTimeStepAsync(Guid userId, long timeStep, CancellationToken cancellationToken = default)
+        {
+            // Tek SQL, koşullu: UPDATE ... SET LastUsedTimeStep = @step
+            //   WHERE UserId = @userId AND (LastUsedTimeStep IS NULL OR LastUsedTimeStep < @step).
+            // Karşılaştırma ve yazma veritabanında tek adımda olduğu için eşzamanlı tekrar kullanım da reddedilir.
+            int affectedRows = await uludagDbContext.OtpAuthenticators
+                .Where(o => o.UserId == userId && (o.LastUsedTimeStep == null || o.LastUsedTimeStep < timeStep))
+                .ExecuteUpdateAsync(setters => setters.SetProperty(o => o.LastUsedTimeStep, timeStep), cancellationToken);
+            return affectedRows > 0;
+        }
     }
 }

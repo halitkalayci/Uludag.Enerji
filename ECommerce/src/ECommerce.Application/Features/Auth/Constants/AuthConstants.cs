@@ -3,6 +3,8 @@ namespace ECommerce.Application.Features.Auth.Constants
     public class AuthConstants
     {
         public const string UserEmailAlreadyExists = "UserEmailAlreadyExists";
+        public const string InvalidEmail = "InvalidEmail";
+        public const string PasswordRequired = "PasswordRequired";
         public const string InvalidEmailOrPassword = "InvalidEmailOrPassword";
         public const string UserNotFound = "UserNotFound";
         public const string OperationClaimNotFound = "OperationClaimNotFound";
@@ -11,6 +13,7 @@ namespace ECommerce.Application.Features.Auth.Constants
         public const string MultiFactorAlreadyEnabled = "MultiFactorAlreadyEnabled";
         public const string OtpAuthenticatorNotSetUp = "OtpAuthenticatorNotSetUp";
         public const string InvalidAuthenticatorCode = "InvalidAuthenticatorCode";
+        public const string AuthenticatorCodeAlreadyUsed = "AuthenticatorCodeAlreadyUsed";
         public const string TooManyAuthenticatorAttempts = "TooManyAuthenticatorAttempts";
         public const string InvalidRefreshToken = "InvalidRefreshToken";
         public const string RefreshTokenExpired = "RefreshTokenExpired";

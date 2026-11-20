@@ -190,6 +190,9 @@ namespace ECommerce.Persistence.Migrations
                     b.Property<bool>("IsVerified")
                         .HasColumnType("bit");
 
+                    b.Property<long?>("LastUsedTimeStep")
+                        .HasColumnType("bigint");
+
                     b.Property<byte[]>("SecretKey")
                         .IsRequired()
                         .HasMaxLength(64)
@@ -287,7 +290,8 @@ namespace ECommerce.Persistence.Migrations
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(320)
+                        .HasColumnType("nvarchar(320)");
 
                     b.Property<byte[]>("PasswordHash")
                         .IsRequired()
@@ -298,6 +302,9 @@ namespace ECommerce.Persistence.Migrations
                         .HasColumnType("varbinary(max)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Email")
+                        .IsUnique();
 
                     b.ToTable("Users");
                 });
