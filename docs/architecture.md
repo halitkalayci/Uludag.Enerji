@@ -49,7 +49,7 @@ OtpAuthenticator, RefreshToken · **Product** → Product · **Order** → Order
 - **F-7** Command/Query handler'larında `if`/`else` ile durum kontrolü ve mapping yoktur: kontroller
   `Features/<X>/Rules` veya servislerde, dönüşümler `Features/<X>/Mappers/<Entity>Mapper` içindedir.
 
-F-1…F-5 mimari testle (NetArchTest, `docs/testing.md`) doğrulanacak; F-6 ve F-7 review'da kontrol edilir.
+F-1…F-5 mimari testle doğrulanır (NetArchTest, `tests/ECommerce.ArchitectureTests/LayerDependencyTests.cs`); F-6 ve F-7 review'da kontrol edilir.
 
 ## Deliberately out of scope
 - Mikroservisler, event bus / mesaj kuyruğu, CQRS için ayrı okuma veritabanı.
