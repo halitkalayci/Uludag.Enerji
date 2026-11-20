@@ -58,7 +58,9 @@ namespace Uludag.Generator.Generation
         }
 
         // Mevcut migration adlarıyla aynı biçim: OrderItem -> order_item (ör. add_order_user).
-        private static string SnakeCase(string name) => Regex.Replace(name, "(?<!^)([A-Z])", "_$1").ToLowerInvariant();
+        // Kısaltmalar bölünmez: OTPCode -> otp_code (review round 2, I-A).
+        private static string SnakeCase(string name) =>
+            Regex.Replace(name, "(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])", "_").ToLowerInvariant();
 
         private static string Describe(PropertyModel p) => p.Kind switch
         {

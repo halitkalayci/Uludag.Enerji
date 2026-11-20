@@ -146,14 +146,18 @@ namespace Uludag.Generator.Tests
             Assert.Equal("string", create["TotalPriceCurrency"]);
         }
 
-        [Fact]
-        public void Crud_Report_MigrationNameIsSnakeCase()
+        [Theory]
+        [InlineData("OrderItem", "add_order_item")]
+        [InlineData("OTPCode", "add_otp_code")]   // kısaltma bölünmez
+        [InlineData("Product", "add_product")]
+        public void Crud_Report_MigrationNameIsSnakeCase(string entity, string migration)
         {
             using var repo = TestRepo.Create();
+            repo.AddEntity("OTPCode", "namespace ECommerce.Domain.Entities { public class OTPCode { public Guid Id { get; set; } } }");
 
-            RunResult result = Run(repo, "crud", "OrderItem", "--dry-run");
+            RunResult result = Run(repo, "crud", entity, "--dry-run");
 
-            Assert.Contains("dotnet ef migrations add add_order_item -p ECommerce/src/ECommerce.Persistence -s ECommerce/src/ECommerce.WebAPI", result.Output);
+            Assert.Contains($"dotnet ef migrations add {migration} -p ECommerce/src/ECommerce.Persistence -s ECommerce/src/ECommerce.WebAPI", result.Output);
         }
 
         [Fact]
