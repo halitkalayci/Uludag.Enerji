@@ -108,6 +108,31 @@ namespace Uludag.Generator.Tests
         }
 
         [Fact]
+        public void Configuration_EachMoney_MappedAsOwnedTypeWithPrecisionAndCurrencyLength()
+        {
+            // Owned-type eşlemesi olmadan kod derlenir ama EF Money'yi anahtarsız entity sanar (spec R-2, G-4).
+            using var repo = TestRepo.Create();
+            repo.AddEntity("Coupon", Fixtures.Coupon);
+
+            Assert.Equal(ExitCodes.Success, Run(repo, "crud", "Coupon").ExitCode);
+
+            string configuration = File.ReadAllText(Path.Combine(repo.Layout.PersistenceDir, "Configurations", "CouponConfiguration.cs"));
+            foreach (string money in new[] { "Discount", "MinimumOrder" })
+            {
+                int start = configuration.IndexOf($"builder.OwnsOne(c => c.{money}, money =>", StringComparison.Ordinal);
+                Assert.True(start >= 0, $"{money} için OwnsOne yok");
+                int end = configuration.IndexOf($"builder.Navigation(c => c.{money}).IsRequired();", start, StringComparison.Ordinal);
+                Assert.True(end > start, $"{money} için zorunlu navigation yok");
+                string block = configuration[start..end];
+                Assert.Contains("money.Property(x => x.Amount)", block);
+                Assert.Contains(".HasPrecision(18, 2);", block);
+                Assert.Contains("money.Property(x => x.Currency)", block);
+                Assert.Contains(".HasMaxLength(3)", block);
+                Assert.Contains(".IsRequired();", block);
+            }
+        }
+
+        [Fact]
         public void Map_MoneyNameCollidesWithProperty_PrefixedFields()
         {
             // Gerçek OrderItem: int Amount + Money TotalPrice → düz "Amount" çakışırdı.
