@@ -13,6 +13,7 @@
   <Folder Name="/tests/">
     <Project Path="tests/ECommerce.Application.UnitTests/ECommerce.Application.UnitTests.csproj" />
     <Project Path="tests/ECommerce.ArchitectureTests/ECommerce.ArchitectureTests.csproj" />
+    <Project Path="tests/ECommerce.Infrastructure.UnitTests/ECommerce.Infrastructure.UnitTests.csproj" />
     <Project Path="tests/ECommerce.IntegrationTests/ECommerce.IntegrationTests.csproj" />
     <Project Path="tests/Uludag.Core.Tests/Uludag.Core.Tests.csproj" />
     <Project Path="tests/Uludag.Generator.Tests/Uludag.Generator.Tests.csproj" />
