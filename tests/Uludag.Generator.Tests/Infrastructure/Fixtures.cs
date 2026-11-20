@@ -1,15 +1,17 @@
 namespace Uludag.Generator.Tests.Infrastructure
 {
     // Testlerde Domain'e eklenen fixture entity'ler (spec G-1: repoda kalıcı değiller).
+    // Fixture adı gerçek bir Domain entity'si olamaz: testler gerçek kayıt dosyalarını kopyalar; ad orada kayıtlıysa
+    // üretim "kayıt zaten var" der ve beklentiler bozulur (spec 0009 gerçek Category'yi ekleyince fixture Topic oldu).
     internal static class Fixtures
     {
         // AC-2 fixture'ı: skaler + tek Money + FK Guid + UserId + navigation + koleksiyon + enum + tanınmayan tip.
-        public const string Category = """
+        public const string Topic = """
             using ECommerce.Domain.ValueObjects;
 
             namespace ECommerce.Domain.Entities
             {
-                public class Category
+                public class Topic
                 {
                     public Guid Id { get; set; }
                     public string Name { get; set; } = null!;
@@ -17,10 +19,10 @@ namespace Uludag.Generator.Tests.Infrastructure
                     public int DisplayOrder { get; set; }
                     public bool IsActive { get; set; }
                     public DateTime? PublishedAt { get; set; }
-                    public CategoryStatus Status { get; set; }
+                    public TopicStatus Status { get; set; }
                     public Money MinimumPrice { get; set; } = null!;
                     public Guid UserId { get; set; }
-                    public Guid? ParentCategoryId { get; set; }
+                    public Guid? ParentTopicId { get; set; }
                     public byte[]? Image { get; set; }
                     public string DisplayName => Name;
                     public static int Counter { get; set; }
@@ -29,7 +31,7 @@ namespace Uludag.Generator.Tests.Infrastructure
                     public virtual ICollection<Product> Products { get; set; } = new List<Product>();
                 }
 
-                public enum CategoryStatus
+                public enum TopicStatus
                 {
                     Draft,
                     Published

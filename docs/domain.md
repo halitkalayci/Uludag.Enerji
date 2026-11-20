@@ -7,7 +7,8 @@
 
 | Term | Meaning | Notes / not to be confused with |
 |---|---|---|
-| Product (Ürün) | Satılan şey: ad, fiyat (`Money`), stok | Ad benzersiz (BR-6) |
+| Product (Ürün) | Satılan şey: ad, fiyat (`Money`), stok, en fazla bir kategori | Ad benzersiz (BR-6) |
+| Category (Kategori) | Ürünlerin gruplandığı, yönetilebilir ad listesi (spec 0009) | Hiyerarşi yok; ürünün kategorisi isteğe bağlı (BR-13) |
 | Stock (Stok) | Bir ürünün satılabilir adedi (`int`) | Sipariş oluşturulunca düşer (BR-4) |
 | Order (Sipariş) | Bir kullanıcının kalemleriyle birlikte tek seferde kaydedilen siparişi; aggregate kökü | Kalemler ayrı kaydedilmez, Order ile birlikte |
 | OrderItem (Sipariş kalemi) | Siparişteki bir ürün + adet (`Amount`) + kalem toplamı | `Amount` = adet, para değil |
@@ -33,13 +34,18 @@
 - **BR-9** Giriş, MFA (TOTP) doğrulanınca JWT + refresh token verir; hatalı kod denemesi `MaxVerificationAttempts` (5) ile sınırlıdır, aşılınca `LockoutDuration` (15 dk) kilit.
 - **BR-10** Refresh token her kullanımda döndürülür (rotation); iptal edilmiş bir token yeniden kullanılırsa çalınmış sayılır ve aynı ailenin aktif token'ı da iptal edilir. Token'ın kendisi değil, yalnızca SHA-256 özeti saklanır.
 - **BR-11** Global `Admin` her `ISecuredRequest`'ten geçer; diğer yetkiler `<Entity>.Admin`, `<Entity>.Write` / `<Entity>.Read`, `<Entity>.<İşlem>` desenindedir.
-- **BR-12** Sipariş, tüm doğrulamalardan sonra siparişin sunucuda hesaplanan toplamı ve para birimi için ödeme denenerek oluşturulur; ödeme reddedilirse sipariş oluşmaz ve stok değişmez (`PaymentDeclined`). Sipariş güncelleme/silme ve kalem işlemleri ödeme denemez (spec 0008).
+- **BR-12** Kategori adı zorunludur, kırpılarak saklanır, en fazla 100 karakterdir ve büyük/küçük harf farkı gözetilmeden benzersizdir.
+  V1 sınırı: karşılaştırma Latin harf kurallarıyla (`SQL_Latin1_General_CP1_CI_AS`) yapılır — Türkçe i/İ ve ı/I
+  çiftleri farklı sayılır ("IŞIK" ≠ "ışık"); karar bekliyor (B-27).
+- **BR-13** Bir ürünün sıfır ya da bir kategorisi vardır; verilen kategori var olmalıdır.
+- **BR-14** Kendisine bağlı ürünü olan kategori silinemez.
+- **BR-15** Sipariş, tüm doğrulamalardan sonra siparişin sunucuda hesaplanan toplamı ve para birimi için ödeme denenerek oluşturulur; ödeme reddedilirse sipariş oluşmaz ve stok değişmez (`PaymentDeclined`). Sipariş güncelleme/silme ve kalem işlemleri ödeme denemez (spec 0008; spec metninde BR-12 adıyla geçer — numara spec 0009 ile çakıştı).
 
 ## Key domain invariants
 - Stok asla negatife düşmez (BR-4).
 - Bir siparişin sahibi asla istemci girdisinden atanmaz (BR-5).
 - Şifre ve refresh token düz metin olarak saklanmaz (BR-10, `docs/security.md`).
-- Ödemesi reddedilmiş bir sipariş kaydı yoktur; ödeme reddi stoğu değiştirmez (BR-12).
+- Ödemesi reddedilmiş bir sipariş kaydı yoktur; ödeme reddi stoğu değiştirmez (BR-15).
 
 ## Sensitive areas
 - **Kimlik ve yetki** — şifre hash'leme, JWT/TokenSession, MFA/OTP, refresh token rotasyonu, operation

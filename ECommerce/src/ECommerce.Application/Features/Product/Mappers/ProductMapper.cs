@@ -1,4 +1,4 @@
-﻿using ECommerce.Application.Features.Product.Commands.Create;
+using ECommerce.Application.Features.Product.Commands.Create;
 using ECommerce.Application.Features.Product.Commands.Update;
 using ECommerce.Application.Features.Product.Queries;
 
@@ -15,7 +15,8 @@ namespace ECommerce.Application.Features.Product.Mappers
             {
                 Name = command.Name,
                 Price = new Domain.ValueObjects.Money(command.Amount, command.Currency),
-                Stock = command.Stock
+                Stock = command.Stock,
+                CategoryId = command.CategoryId
             };
         }
 
@@ -25,6 +26,8 @@ namespace ECommerce.Application.Features.Product.Mappers
             product.Name = command.Name;
             product.Price = new Domain.ValueObjects.Money(command.Amount, command.Currency);
             product.Stock = command.Stock;
+            // Tam değiştirme: kategori gönderilmezse ürün kategorisiz olur (spec 0009, R-3).
+            product.CategoryId = command.CategoryId;
         }
 
         public static ProductResponse MapProductToResponse(Domain.Entities.Product product)
@@ -35,7 +38,9 @@ namespace ECommerce.Application.Features.Product.Mappers
                 Name = product.Name,
                 Amount = product.Price.Amount,
                 Currency = product.Price.Currency,
-                Stock = product.Stock
+                Stock = product.Stock,
+                CategoryId = product.CategoryId,
+                CategoryName = product.Category?.Name
             };
         }
 

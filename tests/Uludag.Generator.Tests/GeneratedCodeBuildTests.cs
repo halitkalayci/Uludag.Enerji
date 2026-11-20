@@ -24,11 +24,11 @@ namespace Uludag.Generator.Tests
                 File.Copy(Path.Combine(real.Root, "Directory.Build.props"), Path.Combine(root, "Directory.Build.props"));
                 File.Copy(Path.Combine(real.Root, "BannedSymbols.txt"), Path.Combine(root, "BannedSymbols.txt"));
                 var layout = new RepoLayout(root);
-                File.WriteAllText(Path.Combine(layout.EntitiesDir, "Category.cs"), Fixtures.Category);
+                File.WriteAllText(Path.Combine(layout.EntitiesDir, "Topic.cs"), Fixtures.Topic);
                 File.WriteAllText(Path.Combine(layout.EntitiesDir, "Coupon.cs"), Fixtures.Coupon);
                 File.WriteAllText(Path.Combine(layout.EntitiesDir, "PriceAlert.cs"), Fixtures.PriceAlert);
 
-                foreach (string entity in new[] { "Category", "Coupon", "PriceAlert" })
+                foreach (string entity in new[] { "Topic", "Coupon", "PriceAlert" })
                 {
                     var error = new StringWriter();
                     int exitCode = App.Run(["crud", entity], root, new StringWriter(), error);
@@ -42,7 +42,7 @@ namespace Uludag.Generator.Tests
                 // Üretilen dosyalar yeni uyarı da getirmez (mevcut uyarılar başka dosyalarda).
                 var generatedWarnings = buildOutput.Split('\n')
                     .Where(l => l.Contains("warning", StringComparison.OrdinalIgnoreCase))
-                    .Where(l => l.Contains("Category", StringComparison.Ordinal) || l.Contains("Coupon", StringComparison.Ordinal)
+                    .Where(l => l.Contains("Topic", StringComparison.Ordinal) || l.Contains("Coupon", StringComparison.Ordinal)
                         || l.Contains("PriceAlert", StringComparison.Ordinal))
                     .Distinct()
                     .ToList();

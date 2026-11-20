@@ -5,7 +5,7 @@ using ECommerce.Application.Services.PaymentService;
 
 namespace ECommerce.Application.UnitTests.Features.Order.Rules
 {
-    // BR-12: Ödemesi reddedilen sipariş oluşmaz (docs/domain.md, spec 0008).
+    // BR-15: Ödemesi reddedilen sipariş oluşmaz (docs/domain.md, spec 0008).
     public class OrderBusinessRulesTests
     {
         private readonly OrderBusinessRules orderBusinessRules = new();

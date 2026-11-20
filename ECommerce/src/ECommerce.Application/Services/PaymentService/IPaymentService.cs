@@ -10,7 +10,7 @@ namespace ECommerce.Application.Services.PaymentService
         Task<PaymentResult> PayAsync(PaymentRequest request, CancellationToken cancellationToken = default);
     }
 
-    // Tahsil edilecek tutar ve kimin adına. Tutarı her zaman sunucu hesaplar (BR-12), istemciden alınmaz.
+    // Tahsil edilecek tutar ve kimin adına. Tutarı her zaman sunucu hesaplar (BR-15), istemciden alınmaz.
     public sealed record PaymentRequest(Guid UserId, Money Amount);
 
     // Sağlayıcının cevabı: onaylandı mı?

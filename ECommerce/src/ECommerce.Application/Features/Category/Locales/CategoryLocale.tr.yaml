@@ -1,0 +1,5 @@
+CategoryNotFound: "Kategori bulunamadı."
+CategoryNameCannotBeEmpty: "Kategori adı boş olamaz."
+CategoryNameTooLong: "Kategori adı 100 karakterden uzun olamaz."
+CategoryNameAlreadyExists: "Bu adla bir kategori zaten var."
+CategoryHasProducts: "Ürünü olan kategori silinemez."

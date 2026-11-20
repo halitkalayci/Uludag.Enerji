@@ -16,7 +16,7 @@ namespace ECommerce.Application.Features.Order.Commands.Create
     // OrderDate, fiyatlar ve siparişin sahibi (UserId) istemciden alınmaz, sunucu belirler.
     // Sahip, isteğin Bearer token'ının oturumundan alınır (başkası adına sipariş verilemez).
     // Her kalemin adedi kadar ürün stoğundan düşülür; stok yetmezse sipariş oluşmaz.
-    // Doğrulamalardan sonra siparişin toplamı için ödeme denenir (spec 0008, BR-12); ödeme reddedilirse
+    // Doğrulamalardan sonra siparişin toplamı için ödeme denenir (spec 0008, BR-15); ödeme reddedilirse
     // stok düşülmez ve sipariş kaydedilmez — ödeme bu yüzden stok değişikliğinden ÖNCE yapılır.
     public class CreateOrderCommand : IRequest
     {

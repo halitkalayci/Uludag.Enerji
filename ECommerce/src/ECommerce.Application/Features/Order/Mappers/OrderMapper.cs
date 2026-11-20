@@ -36,7 +36,7 @@ namespace ECommerce.Application.Features.Order.Mappers
             return order;
         }
 
-        // Ödeme isteği: tutar siparişin sunucuda hesaplanan toplamı, sahibi siparişin sahibi (BR-12, spec 0008).
+        // Ödeme isteği: tutar siparişin sunucuda hesaplanan toplamı, sahibi siparişin sahibi (BR-15, spec 0008).
         public static PaymentRequest MapOrderToPaymentRequest(Domain.Entities.Order order)
         {
             return new PaymentRequest(order.UserId, order.TotalPrice);

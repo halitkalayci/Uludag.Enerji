@@ -25,7 +25,7 @@ namespace ECommerce.Application.Features.Order.Rules
                 throw new BusinessException(OrderConstants.OrderMustContainAtLeastOneItem);
         }
 
-        // BR-12: Ödemesi reddedilen sipariş oluşmaz (spec 0008).
+        // BR-15: Ödemesi reddedilen sipariş oluşmaz (spec 0008).
         public void PaymentShouldBeApproved(PaymentResult paymentResult)
         {
             if (!paymentResult.IsApproved)

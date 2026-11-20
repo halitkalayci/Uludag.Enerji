@@ -1,7 +1,8 @@
-﻿using ECommerce.Application.Features.Product.Mappers;
+using ECommerce.Application.Features.Product.Mappers;
 using ECommerce.Application.Features.Product.Rules;
 using ECommerce.Application.Services.Repositories;
 using ECommerce.Application.Features.Product.Constants;
+using ECommerce.Application.Services.CategoryService;
 using Uludag.Core.Mediation;
 
 namespace ECommerce.Application.Features.Product.Commands.Create
@@ -18,6 +19,8 @@ namespace ECommerce.Application.Features.Product.Commands.Create
         public decimal Amount { get; set; }
         public string Currency { get; set; }
         public int Stock { get; set; }
+        // Ürünün kategorisi (spec 0009); null ya da gönderilmezse ürün kategorisizdir.
+        public Guid? CategoryId { get; set; }
 
         // İkinci parça -> Commandın handleri
         // Bu komut geldiğinde ne olacak?
@@ -30,10 +33,13 @@ namespace ECommerce.Application.Features.Product.Commands.Create
             // Dependency Injection
             private readonly ProductBusinessRules productBusinessRules;
             private readonly IProductRepository productRepository; // persistence tarafından çözülüyor (sarmallayan)
-            public CreateProductCommandHandler(IProductRepository productRepository, ProductBusinessRules productBusinessRules)
+            // Kategori başka feature'ın entity'si: repository'si değil servisi kullanılır (F-6).
+            private readonly ICategoryService categoryService;
+            public CreateProductCommandHandler(IProductRepository productRepository, ProductBusinessRules productBusinessRules, ICategoryService categoryService)
             {
                 this.productRepository = productRepository;
                 this.productBusinessRules = productBusinessRules;
+                this.categoryService = categoryService;
             }
 
             // Bir developerın ekranında en çok olacak nokta.
@@ -43,6 +49,7 @@ namespace ECommerce.Application.Features.Product.Commands.Create
                 // Doğru sırayla, doğru kişileri çağır.
                 // İş kuralı
                 await productBusinessRules.ProductNameCannotExist(request.Name);
+                await categoryService.CategoryShouldExistWhenGivenAsync(request.CategoryId, cancellationToken);
 
                 // İşi kendisi yapıyor.
                 // Mapper -> Gibi davranmadı

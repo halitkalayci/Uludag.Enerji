@@ -1,4 +1,4 @@
-﻿using ECommerce.Application.Services.Repositories;
+using ECommerce.Application.Services.Repositories;
 using ECommerce.Domain.Entities;
 using System;
 using System.Collections.Generic;
@@ -36,6 +36,11 @@ namespace ECommerce.Persistence.Repositories
         }
 
         public Task UpdateAsync(Product product, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<bool> AnyInCategoryAsync(Guid categoryId, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }

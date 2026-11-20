@@ -61,6 +61,9 @@
 ## Known traps
 <!-- Starts empty. "<trap> — <what to do instead> — from <spec/finding>". Added at triage (Amendment A-n). -->
 - Benzersizlik kuralı yalnızca Rules'ta kontrol-sonra-ekle ile yazılırsa eşzamanlı istekte delinir; `nvarchar(max)` kolona index konamaz — kolona uzunluk + DB unique index ekle, repository'de 2601/2627 ihlalini aynı kuralın `BusinessException`'ına çevir — from spec 0002 / A-2 (review Info-4)
+- Harf duyarsız benzersizliği Latin1 CI collation'a bırakmak Türkçe i/İ, ı/I çiftlerini kapsamaz (`Turkish_CI_AS` ise
+  "Iphone"/"iphone"yi ayırır) — kabul edilen harf kurallarını spec'te yaz, AC testinde Türkçe çift kullan — from spec 0009
+  / review M-1 (B-27)
 - Rastgele sonuçlu fake dış servis (FakePayment) paylaşılan `ApiFixture`'da sabitlenmezse sipariş veren her entegrasyon testi %25 olasılıkla kırmızı olur — fixture'da `FakePayment:DeclineRate=0`; ret isteyen test türetilmiş host (`OrderArrange.FactoryWithDeclineRate`) ya da stub (`RecordingPaymentService`) kullanır — from spec 0008 / A-1 (review Low-2)
 
 ## Enforced by tooling
