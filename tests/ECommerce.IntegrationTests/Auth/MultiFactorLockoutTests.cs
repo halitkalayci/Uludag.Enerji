@@ -35,6 +35,9 @@ namespace ECommerce.IntegrationTests.Auth
         }
 
         // Kilidin süresi beklenmeden ölçülür (spec Constraints; plan R-2): kullanıcının kilit kaydının kalan ömrü.
+        // BR-9: kilit limit AŞILINCA başlar ve 15 dk sürer. Hatalı denemeler zamana yayılmış olabilir: ilk denemeden
+        // sonra "13 dk geçmiş" gibi davranılır (deneme kaydının kalan ömrü Redis'te 2 dk'ya indirilir — plan A-1, R-2).
+        // Kilit ilk denemeden başlıyorsa bu noktada ~2 dk kalır; doğru uygulamada aşıldığı andan itibaren ~15 dk.
         [Fact]
         public async Task Verify_Lockout_LastsFifteenMinutes()
         {
@@ -42,16 +45,26 @@ namespace ECommerce.IntegrationTests.Auth
             string mfaToken = await arrange.OpenMfaSessionAsync(userId);
             using HttpClient client = arrange.CreateClient();
             string secret = await arrange.SetupMfaAsync(client, mfaToken);
-            await FailAttemptsAsync(client, mfaToken, secret, MaxAttempts);
-            HttpResponseMessage locked = await AuthArrange.VerifyAsync(client, mfaToken, AuthArrange.CurrentCode(secret));
-            await ProblemAssert.IsProblemAsync(locked, HttpStatusCode.BadRequest);
 
-            // Anahtar adı koda sabitlenmez: Redis'te bu kullanıcıya ait, süreli kayıtlar aranır.
+            // Anahtar adı koda sabitlenmez: bu kullanıcıya ait kayıtlar Redis'te kullanıcı id'siyle aranır.
             await using ConnectionMultiplexer redis = await ConnectionMultiplexer.ConnectAsync(fixture.RedisConnectionString);
             IServer server = redis.GetServer(redis.GetEndPoints().Single());
             IDatabase database = redis.GetDatabase();
+            HashSet<RedisKey> keysBeforeAttempts = await KeysOfUserAsync(server, userId);
+
+            await FailAttemptsAsync(client, mfaToken, secret, 1);
+            List<RedisKey> attemptKeys = (await KeysOfUserAsync(server, userId)).Except(keysBeforeAttempts).ToList();
+            Assert.NotEmpty(attemptKeys);
+            TimeSpan remainingAfterTimePassed = TimeSpan.FromMinutes(2);
+            foreach (RedisKey key in attemptKeys)
+                Assert.True(await database.KeyExpireAsync(key, remainingAfterTimePassed), $"Deneme kaydının süresi ayarlanamadı: {key}");
+
+            await FailAttemptsAsync(client, mfaToken, secret, MaxAttempts - 1);
+            HttpResponseMessage locked = await AuthArrange.VerifyAsync(client, mfaToken, AuthArrange.CurrentCode(secret));
+            await ProblemAssert.IsProblemAsync(locked, HttpStatusCode.BadRequest);
+
             List<TimeSpan> remainingLifetimes = [];
-            await foreach (RedisKey key in server.KeysAsync(pattern: $"*{userId}*"))
+            foreach (RedisKey key in (await KeysOfUserAsync(server, userId)).Except(keysBeforeAttempts))
             {
                 TimeSpan? ttl = await database.KeyTimeToLiveAsync(key);
                 if (ttl is not null)
@@ -59,7 +72,16 @@ namespace ECommerce.IntegrationTests.Auth
             }
 
             TimeSpan tolerance = TimeSpan.FromMinutes(1);
-            Assert.Contains(remainingLifetimes, ttl => ttl <= LockoutDuration && ttl > LockoutDuration - tolerance);
+            Assert.True(remainingLifetimes.Any(ttl => ttl <= LockoutDuration && ttl > LockoutDuration - tolerance),
+                $"Limit aşıldıktan sonra ~15 dk kilit bekleniyordu; kullanıcının kayıtlarında kalan süreler: [{string.Join(", ", remainingLifetimes)}]");
+        }
+
+        private static async Task<HashSet<RedisKey>> KeysOfUserAsync(IServer server, Guid userId)
+        {
+            HashSet<RedisKey> keys = [];
+            await foreach (RedisKey key in server.KeysAsync(pattern: $"*{userId}*"))
+                keys.Add(key);
+            return keys;
         }
 
         [Fact]
