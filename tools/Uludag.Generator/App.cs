@@ -1,6 +1,7 @@
 using System.Reflection;
 using Uludag.Generator.Analysis;
 using Uludag.Generator.Cli;
+using Uludag.Generator.Generation;
 using Uludag.Generator.Workspace;
 
 namespace Uludag.Generator
@@ -62,8 +63,25 @@ namespace Uludag.Generator
 
         private static int Crud(CliArguments arguments, RepoLayout layout, DomainModel domain, TextWriter output, TextWriter error)
         {
-            error.WriteLine("Hata: 'crud' henüz desteklenmiyor.");
-            return ExitCodes.UserError;
+            PlanResult result = CrudGenerator.Plan(layout, domain, arguments.Entity!, arguments.Plural);
+            if (result.Plan is null)
+            {
+                error.WriteLine($"Hata: {result.Error}");
+                return ExitCodes.UserError;
+            }
+
+            GenerationPlan plan = result.Plan;
+            if (plan.Conflicts.Count > 0 && !arguments.Force)
+            {
+                ReportWriter.WriteConflicts(plan, layout, error);
+                return ExitCodes.Conflict;
+            }
+
+            if (!arguments.DryRun)
+                CrudGenerator.Apply(plan);
+
+            ReportWriter.Write(plan, layout, arguments.DryRun, output);
+            return ExitCodes.Success;
         }
 
         public static string Version =>
