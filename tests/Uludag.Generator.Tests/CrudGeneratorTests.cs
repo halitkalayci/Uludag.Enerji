@@ -246,6 +246,8 @@ namespace Uludag.Generator.Tests
             Assert.Equal(before, repo.Snapshot()); // ne yeni dosya ne kayıt eklemesi
             Assert.Contains($"= {CategoryFiles[5]}", result.Error);
             Assert.Contains("--force", result.Error);
+            Assert.Contains("--force yalnızca", result.Error);
+            Assert.Contains("uludag-gen'in ürettiği dosyaların üzerine yazmak içindir", result.Error);
         }
 
         [Fact]
