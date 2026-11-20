@@ -295,6 +295,25 @@ namespace Uludag.Generator.Tests
         }
 
         [Fact]
+        public void Crud_DryRun_WithConflict_ListsPlanAndTouchesNothing()
+        {
+            using var repo = CategoryRepo();
+            repo.Write(repo.Full(CategoryFiles[5]), "// elle yazıldı\n");
+            var before = repo.Snapshot();
+
+            RunResult result = Run(repo, "crud", "Category", "--dry-run");
+
+            Assert.Equal(ExitCodes.Conflict, result.ExitCode);
+            Assert.Equal(before, repo.Snapshot());
+            Assert.Contains("Oluşturulacak (15):", result.Output);
+            Assert.Contains("Çakışan (zaten var, yazılmayacak) (1):", result.Output);
+            Assert.Contains($"! {CategoryFiles[5]}", result.Output);
+            Assert.Contains("Değiştirilecek (3):", result.Output);
+            Assert.Contains($"= {CategoryFiles[5]}", result.Error);
+            Assert.DoesNotContain("--dry-run kullanın", result.Error); // zaten verilmiş
+        }
+
+        [Fact]
         public void Crud_DryRun_TouchesNothing()
         {
             using var repo = CategoryRepo();

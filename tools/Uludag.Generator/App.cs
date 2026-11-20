@@ -73,14 +73,17 @@ namespace Uludag.Generator
             GenerationPlan plan = result.Plan;
             if (plan.Conflicts.Count > 0 && !arguments.Force)
             {
-                ReportWriter.WriteConflicts(plan, layout, error);
+                // Dry-run çakışmada da tam planı gösterir (spec R-6); çıkış kodu yine 2 — betikler çakışmayı görür.
+                if (arguments.DryRun)
+                    ReportWriter.Write(plan, layout, dryRun: true, force: false, output);
+                ReportWriter.WriteConflicts(plan, layout, arguments.DryRun, error);
                 return ExitCodes.Conflict;
             }
 
             if (!arguments.DryRun)
                 CrudGenerator.Apply(plan);
 
-            ReportWriter.Write(plan, layout, arguments.DryRun, output);
+            ReportWriter.Write(plan, layout, arguments.DryRun, arguments.Force, output);
             return ExitCodes.Success;
         }
 

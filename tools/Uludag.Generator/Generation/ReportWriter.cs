@@ -7,19 +7,22 @@ namespace Uludag.Generator.Generation
     // Düz metin çıktı (spec R-7): ne oluştu/değişti, ne atlandı, sonra ne yapılmalı. AI ajanı bu çıktıyı okur.
     internal static class ReportWriter
     {
-        public static void WriteConflicts(GenerationPlan plan, RepoLayout layout, TextWriter error)
+        public static void WriteConflicts(GenerationPlan plan, RepoLayout layout, bool dryRun, TextWriter error)
         {
             error.WriteLine($"Çakışma: aşağıdaki dosyalar zaten var; hiçbir dosya yazılmadı ya da değiştirilmedi.");
             foreach (PlannedFile file in plan.Conflicts)
                 error.WriteLine($"  = {layout.Relative(file.Path)}");
-            error.WriteLine("Üzerine yazmak için --force, önizleme için --dry-run kullanın.");
+            error.WriteLine(dryRun
+                ? "Üzerine yazmak için --force kullanın."
+                : "Üzerine yazmak için --force, tam önizleme için --dry-run kullanın.");
         }
 
-        public static void Write(GenerationPlan plan, RepoLayout layout, bool dryRun, TextWriter output)
+        public static void Write(GenerationPlan plan, RepoLayout layout, bool dryRun, bool force, TextWriter output)
         {
             CrudModel m = plan.Model;
             string verbNew = dryRun ? "Oluşturulacak" : "Oluşturuldu";
-            string verbOverwrite = dryRun ? "Üzerine yazılacak" : "Üzerine yazıldı";
+            // Çakışan dosyalar yalnızca --force ile üzerine yazılır; yoksa (dry-run) yazılmayacakları belirtilir.
+            string verbOverwrite = !force ? "Çakışan (zaten var, yazılmayacak)" : dryRun ? "Üzerine yazılacak" : "Üzerine yazıldı";
             string verbEdit = dryRun ? "Değiştirilecek" : "Değiştirildi";
 
             output.WriteLine($"uludag-gen crud {m.Entity} (çoğul: {m.Plural}){(dryRun ? " — DRY RUN: hiçbir dosyaya dokunulmadı" : string.Empty)}");
