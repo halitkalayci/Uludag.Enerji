@@ -55,6 +55,33 @@ namespace ECommerce.IntegrationTests.Catalog
             await AssertCategoryUntouchedAsync(admin, existing);
         }
 
+        // Bir işlemin Category yetkisi başka bir işleme sızmaz (review round 1, L-1): yetki "bir Category.* claim'i" değil,
+        // R-7'de o işlem için sayılanlardan biridir.
+        public static TheoryData<string, string> OtherOperationClaims => new()
+        {
+            { "Create", "Category.Read" },
+            { "Update", "Category.Create" },
+            { "Delete", "Category.Update" },
+            { "Delete", "Category.Read" },
+            { "GetAll", "Category.Write" },
+            { "GetById", "Category.Delete" },
+        };
+
+        // AC-10: ilgili işlemin yetkisi olmayan (yalnızca başka bir Category işleminin yetkisi olan) kullanıcı -> 403
+        [Theory]
+        [MemberData(nameof(OtherOperationClaims))]
+        public async Task OtherOperationClaim_Returns403(string operation, string claim)
+        {
+            using HttpClient admin = await arrange.CreateCatalogAdminClientAsync();
+            CategoryDto existing = await CatalogArrange.CreateCategoryAsync(admin);
+            using HttpClient client = await arrange.CreateClientWithClaimsAsync(claim);
+
+            HttpResponseMessage response = await SendAsync(client, operation, existing.Id);
+
+            await ProblemAssert.IsProblemAsync(response, HttpStatusCode.Forbidden);
+            await AssertCategoryUntouchedAsync(admin, existing);
+        }
+
         // AC-10: R-7'deki yetkilerden herhangi biri yeterli
         [Theory]
         [MemberData(nameof(AcceptedClaims))]
