@@ -1,0 +1,26 @@
+# Backlog — deferred findings
+
+Findings a human triaged as **defer**: real, but fixed later by decision (`workflows/feature-development.md`,
+step 7). Nothing lands here without that decision; noise is rejected in the triage record, not parked here.
+
+- A criterion moved out at the ship gate (R-08, `→ moved to B-<n>`) lands here too, by the
+  human's ship decision; the entry names the spec and criterion.
+- One entry per finding, newest last. Delete the entry in the commit of the work that closes it.
+- An entry that grows into new behavior becomes a spec (`specs/active/`), not a fix.
+
+<!-- Format (labels stay English):
+- **B-<n>** — <finding, one line> — Source: spec <NNNN>, review round <n> (<file:line>) — Severity: <…>
+  — Recommendation: <the reviewer's action> — Deferred by: <name>, <YYYY-MM-DD>, <why>
+  A decision deferred at bootstrap (its REPORT) uses Source: bootstrap <YYYY-MM-DD>.
+-->
+
+- **B-1** — Git'te takip edilen `ECommerce/src/ECommerce.WebAPI/appsettings.Development.json` (TokenOptions:SecurityKey, RedisOptions:ConnectionString, AdminSeed:Password) ve `appsettings.json` (SQL `sa` şifresi) secret içeriyor — Source: bootstrap 2026-11-19 — Severity: High (öncelikli)
+  — Recommendation: secret'ları `dotnet user-secrets` / ortam değişkenlerine taşı, `SecurityKey`'i yenile; hassas alan (Kimlik ve yetki) fix'i — Deferred by: Halit Enes Kalaycı, 2026-11-19, bootstrap yalnızca doküman ve konfigürasyon yazar
+- **B-2** — `global.json` yok; build makinedeki en yeni SDK ile (bugün 10.0.401) yapılıyor — Source: bootstrap 2026-11-19 — Severity: Low
+  — Recommendation: SDK'yı `global.json` ile sabitle (rollForward: latestFeature) — Deferred by: Halit Enes Kalaycı, 2026-11-19, mevcut build ayarları bootstrap'ta değiştirilmez
+- **B-3** — Hedef `net9.0` (STS, destek sonu Kasım 2026) — Source: bootstrap 2026-11-19 — Severity: Medium
+  — Recommendation: .NET 10 LTS'e yükseltme (ayrı spec; EF Core 10, paket sürümleri) — Deferred by: Halit Enes Kalaycı, 2026-11-19, ayrı iş
+- **B-4** — `prettier --check` 53 dosyada fark buluyor (muhtemelen CRLF/LF; yeni `.gitattributes`) — Source: bootstrap 2026-11-19 — Severity: Low
+  — Recommendation: tek seferlik `prettier --write` + satır sonu normalizasyonu (trivial değil: çok dosya), ardından `check.conf`'a `format [fast]` adımı — Deferred by: Halit Enes Kalaycı, 2026-11-19, check bugün yeşil kalsın
+- **B-5** — `CreateOrderCommand`, `GetByIdOrderQuery`, `GetAllProductQuery` ne `ISecuredRequest` ne `IAllowAnonymousRequest` bildiriyor (yalnızca kimlik doğrulama); `GetByIdOrderQuery`'de sahiplik (IDOR) kontrolü doğrulanmadı — Source: bootstrap 2026-11-19 — Severity: Medium
+  — Recommendation: incele (investigate); gerekirse hassas alan (Kimlik ve yetki) fix'i ile yetki/sahiplik kontrolü ekle — Deferred by: Halit Enes Kalaycı, 2026-11-20, bootstrap yalnızca doküman ve konfigürasyon yazar
