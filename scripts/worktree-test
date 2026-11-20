@@ -7,6 +7,8 @@
 set -u
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 W="$ROOT/scripts/worktree"
+GUARD="$ROOT/.claude/hooks/worktree-guard.sh"
+SHIPPED="$ROOT/.claude/hooks/protect-shipped.sh"
 passed=0
 failed=0
 TMP=$(mktemp -d "${TMPDIR:-/tmp}/worktree-test.XXXXXX") || { echo "worktree-test: mktemp failed" >&2; exit 1; }
@@ -168,9 +170,38 @@ has "kept    feature/wip" "sweep: unmerged worktree untouched"
 T="sweep: unmerged worktree untouched (directory and branch kept)"
 truth sh -c "test -d '$(dirof feature/wip)' && git -C '$M' show-ref --verify --quiet refs/heads/feature/wip"
 
+echo "== hooks =="
+fixture
+wt "$M" new feature/h
+H=$(dirof feature/h)
+json_q() { printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'; }
+edit()  { out=$(printf '{"cwd":"%s","tool_name":"Edit","tool_input":{"file_path":"%s"}}' "$(json_q "$1")" "$(json_q "$2")" | sh "$GUARD" 2>&1); rc=$?; }
+bash_() { out=$(printf '{"cwd":"%s","tool_name":"Bash","tool_input":{"command":"%s"}}' "$(json_q "$1")" "$(json_q "$2")" | sh "$GUARD" 2>&1); rc=$?; }
+edit "$M" "$M/file.txt";            exits 2 "guard: blocks Edit in main tree"; has "Blocked" "guard: blocks Edit in main tree (says why)"
+edit "$M" "$M/new/dir/x.md";        exits 2 "guard: blocks Write of a new file in main tree"
+edit "$M" "$H/file.txt";            exits 0 "guard: allows Edit in worktree"
+edit "$H" "$H/file.txt";            exits 0 "guard: allows Edit in worktree (session started there)"
+mkdir -p "$S/elsewhere"
+edit "$M" "$S/elsewhere/notes.md";  exits 0 "guard: allows file outside repo"
+bash_ "$M" "git checkout -b x";     exits 2 "guard: blocks git checkout in main tree"
+bash_ "$M" "git status && git switch main"; exits 2 "guard: blocks git switch in main tree (later in a chain)"
+bash_ "$M" "git -C $H commit -m x";       exits 0 "guard: allows git -C <worktree> commit"
+bash_ "$M" "git -C ../Repo-feature-h add file.txt"; exits 0 "guard: allows git -C <worktree> commit (relative path)"
+bash_ "$M" "cd $H && git commit -m x";    exits 0 "guard: allows cd <worktree> && git commit"
+bash_ "$H" "cd $M && git commit -m x";    exits 2 "guard: blocks cd <main> && git commit from a worktree"
+bash_ "$H" "git -C $M stash";             exits 2 "guard: blocks git -C <main> stash"
+bash_ "$M" "git fetch origin && git worktree add ../Repo-x -b x origin/main"; exits 0 "guard: allows fetch and worktree add in main tree"
+bash_ "$M" "git log --oneline -3 | head"; exits 0 "guard: allows read-only git in main tree"
+if command -v cygpath >/dev/null 2>&1; then
+  edit "$M" "$(cygpath -w "$M/file.txt")"; exits 2 "guard: Windows backslash path in main tree is blocked"
+  edit "$M" "$(cygpath -w "$H/file.txt")"; exits 0 "guard: Windows backslash path in worktree is allowed"
+fi
+out=$(printf '{"tool_input":{"file_path":"%s/specs/done/0001-x.md"}}' "$H" | sh "$SHIPPED" 2>&1); rc=$?
+exits 2 "guard: protect-shipped still blocks specs/done"
+
 echo "== no merge in the scripts =="
 # PB-1: scripts/worktree never runs `gh pr merge` or `git merge` — merging stays with the human.
-out=$(grep -nE '^[^#]*((^|[^[:alnum:]_-])(git|g)[[:space:]]+(-C[[:space:]]+[^[:space:]]+[[:space:]]+)?merge([[:space:]]|$)|pr[[:space:]]+merge)' "$W" 2>&1)
+out=$(grep -nE '^[^#]*((^|[^[:alnum:]_-])(git|g)[[:space:]]+(-C[[:space:]]+[^[:space:]]+[[:space:]]+)?merge([[:space:]]|$)|pr[[:space:]]+merge)' "$W" "$GUARD" "$ROOT/.claude/hooks/worktree-sweep.sh" 2>&1)
 if [ -z "$out" ]; then rc=0; else rc=1; fi
 exits 0 "scripts never merge"
 
