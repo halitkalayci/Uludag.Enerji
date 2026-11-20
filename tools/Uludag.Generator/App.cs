@@ -1,5 +1,7 @@
 using System.Reflection;
+using Uludag.Generator.Analysis;
 using Uludag.Generator.Cli;
+using Uludag.Generator.Workspace;
 
 namespace Uludag.Generator
 {
@@ -32,10 +34,36 @@ namespace Uludag.Generator
                 case CliCommand.Version:
                     output.WriteLine($"uludag-gen {Version}");
                     return ExitCodes.Success;
-                default:
-                    error.WriteLine($"Hata: '{arguments.Command}' henüz desteklenmiyor.");
-                    return ExitCodes.UserError;
             }
+
+            RepoLayout? layout = RepoLocator.Locate(workingDirectory, arguments.Root);
+            if (layout is null)
+            {
+                error.WriteLine(arguments.Root is null
+                    ? $"Hata: repo kökü bulunamadı. '{workingDirectory}' ve üst dizinlerinde '{RepoLayout.MarkerRelativePath}' yok. Repo içinden çalıştırın ya da --root verin."
+                    : $"Hata: '{arguments.Root}' repo kökü değil ('{RepoLayout.MarkerRelativePath}' yok).");
+                return ExitCodes.UserError;
+            }
+
+            DomainModel domain = EntityReader.Read(layout);
+            return arguments.Command switch
+            {
+                CliCommand.List => List(domain, output),
+                _ => Crud(arguments, layout, domain, output, error)
+            };
+        }
+
+        private static int List(DomainModel domain, TextWriter output)
+        {
+            foreach (EntityModel entity in domain.Entities)
+                output.WriteLine(entity.Name);
+            return ExitCodes.Success;
+        }
+
+        private static int Crud(CliArguments arguments, RepoLayout layout, DomainModel domain, TextWriter output, TextWriter error)
+        {
+            error.WriteLine("Hata: 'crud' henüz desteklenmiyor.");
+            return ExitCodes.UserError;
         }
 
         public static string Version =>
