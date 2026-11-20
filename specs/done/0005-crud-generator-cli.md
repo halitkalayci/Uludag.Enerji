@@ -1,6 +1,6 @@
 # Spec 0005 — CRUD Generator CLI
 
-- Status: In progress
+- Status: Shipped
 - Mode: lite
 - Plan: `specs/plans/0005-plan.md`
 - Self-critique: done
@@ -92,49 +92,49 @@ none — no user interface (komut satırı aracı; akış R-1, R-6, R-7'de tanı
 - Kriter sayısı 10, tek yetenek ("entity'den CRUD dilimi üret") + kurulumu — bölünmedi.
 
 ## Acceptance criteria
-- [ ] AC-1 — Liste: `uludag-gen list` `ECommerce.Domain/Entities` altındaki entity sınıflarını (enum ve
+- [x] AC-1 — Liste: `uludag-gen list` `ECommerce.Domain/Entities` altındaki entity sınıflarını (enum ve
   value object hariç) adlarıyla listeler; çözüm derlenmiyorken de çalışır.
-- [ ] AC-2 — Üretim (mutlu yol): Domain'e eklenen bir fixture entity (skaler + tek `Money` + FK Guid +
+- [x] AC-2 — Üretim (mutlu yol): Domain'e eklenen bir fixture entity (skaler + tek `Money` + FK Guid +
   navigation içeren) için `uludag-gen crud <Entity>` R-2'deki 16 dosyayı Product ile aynı yol/ad düzeninde
   oluşturur, R-3'teki 3 kaydı ekler ve 0 ile çıkar; ardından `scripts/check` (build + mimari testler F-1…F-5)
   yeşildir.
-- [ ] AC-3 — Çalışırlık: AC-2'de üretilen uçlar çalışan API'de yetkili bir kullanıcıyla
+- [x] AC-3 — Çalışırlık: AC-2'de üretilen uçlar çalışan API'de yetkili bir kullanıcıyla
   oluştur → listele → id ile getir → güncelle → sil akışını tamamlar; olmayan id'ye GetById/Update/Delete
   404 ProblemDetails döner.
-- [ ] AC-4 — Yetki varsayılanı: üretilen 5 isteğin hepsi `ISecuredRequest` uygular ve rolleri R-5'teki
+- [x] AC-4 — Yetki varsayılanı: üretilen 5 isteğin hepsi `ISecuredRequest` uygular ve rolleri R-5'teki
   matristir; token'sız istek 401, ilgili claim'i olmayan kullanıcı 403 alır.
-- [ ] AC-5 — F-7: üretilen Command/Query handler'larında `if`/`else`/`switch` ve nesne başlatıcıyla mapping
+- [x] AC-5 — F-7: üretilen Command/Query handler'larında `if`/`else`/`switch` ve nesne başlatıcıyla mapping
   bulunmaz; kontroller `XBusinessRules`'ta, dönüşümler `XMapper`'dadır.
-- [ ] AC-6 — Özellik eşleme: R-4'ün her kuralı ayrı doğrulanır — `Id` Create'te yok; tek `Money` →
+- [x] AC-6 — Özellik eşleme: R-4'ün her kuralı ayrı doğrulanır — `Id` Create'te yok; tek `Money` →
   `Amount`/`Currency`; iki `Money` ya da ad çakışması → önekli alanlar; navigation ve koleksiyon atlanır ve çıktıda uyarı
   olarak listelenir; FK Guid ve nullable skaler korunur; `UserId` komutlara girmez, yanıtta kalır, uyarı verilir.
-- [ ] AC-7 — Çakışma ve force: hedef dosyalardan biri varken komut hiçbir dosya yazmadan/değiştirmeden
+- [x] AC-7 — Çakışma ve force: hedef dosyalardan biri varken komut hiçbir dosya yazmadan/değiştirmeden
   sıfırdan farklı kodla çıkar ve çakışanları listeler; force seçeneğiyle üzerine yazar; aynı entity için
   tekrar çalıştırma kayıt eklerini (DbSet, DI, seed) çoğaltmaz.
-- [ ] AC-8 — Hatalı girdi: olmayan entity adı, enum/value object adı ve repo dışında (kök bulunamayan
+- [x] AC-8 — Hatalı girdi: olmayan entity adı, enum/value object adı ve repo dışında (kök bulunamayan
   dizinde) çalıştırma ve `Guid Id` özelliği olmayan entity, açıklayıcı mesaj ve sıfırdan farklı kodla
   sonuçlanır; hiçbir dosyaya dokunulmaz.
   Dry-run seçeneği aynı listeyi yazdırır ve hiçbir dosyaya dokunmaz.
-- [ ] AC-9 — Kurulum: belgelenen kurulum komutu sonrası `dotnet tool list -g` aracı gösterir ve
+- [x] AC-9 — Kurulum: belgelenen kurulum komutu sonrası `dotnet tool list -g` aracı gösterir ve
   `uludag-gen --version` repo dışındaki bir dizinden çalışır; belgelenen güncelleme ve kaldırma komutları
   çalışır. (Kanıt: bu bilgisayardaki tekrarlanabilir gözlem.)
-- [ ] AC-10 — Ajan yönergesi: AI'ın okuduğu proje belgeleri (`AGENTS.md` "Where things live" ve
+- [x] AC-10 — Ajan yönergesi: AI'ın okuduğu proje belgeleri (`AGENTS.md` "Where things live" ve
   `docs/conventions.md`) generator'ın ne zaman ve nasıl kullanılacağını, üretim sonrası düzenlenecek
   yerleri (entity'ye özgü kurallar, migration) içerir; `docs/architecture.md` yeni aracı modül tablosunda
   gösterir.
 
 ## Definition of Done
-- [ ] Every acceptance criterion mapped to proof (test or reproducible observation)
-- [ ] `scripts/check` green
-- [ ] Independent review done; real findings fixed, noise rejected with written rationale, deferred ones in `specs/backlog.md`
-- [ ] Docs / ADRs updated if behavior or architecture changed
-- [ ] Spec moved to `specs/done/` (it becomes immutable there)
+- [x] Every acceptance criterion mapped to proof (test or reproducible observation)
+- [x] `scripts/check` green
+- [x] Independent review done; real findings fixed, noise rejected with written rationale, deferred ones in `specs/backlog.md`
+- [x] Docs / ADRs updated if behavior or architecture changed
+- [x] Spec moved to `specs/done/` (it becomes immutable there)
 
 ## Scorecard (fill at ship — honest numbers make the process improvable)
 | Metric | Value |
 |---|---|
-| Spec revisions | |
-| Fix rounds | |
-| Review findings: real / noise / deferred | |
-| Regressions introduced | |
-| Bugs escaped to production | |
+| Spec revisions | 2 (rev 1: plan R-6/R-7 docs ↔ spec; rev 2: A-1 Money ad çakışması) |
+| Fix rounds | 2 (fix-1: review round 1; fix-2: review round 2) |
+| Review findings: real / noise / deferred | 8 / 2 / 4 (review 1: 6/1/1 · review 2: 2/0/0 · VERIFY 1: 0/1/3 → B-24, B-25, B-26) |
+| Regressions introduced | 0 |
+| Bugs escaped to production | 0 (ship anında) |
