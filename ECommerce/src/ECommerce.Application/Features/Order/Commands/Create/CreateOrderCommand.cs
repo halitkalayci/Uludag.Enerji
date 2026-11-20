@@ -102,7 +102,7 @@ namespace ECommerce.Application.Features.Order.Commands.Create
                 Domain.Entities.Order order = OrderMapper.MapCreateCommandToOrder(request, products, tokenSession.UserId);
 
                 // Ödeme: stok düşülmeden ve sipariş kaydedilmeden önce. Ret -> BusinessException, hiçbir şey değişmez.
-                PaymentResult paymentResult = await paymentService.PayAsync(new PaymentRequest(tokenSession.UserId, order.TotalPrice), cancellationToken);
+                PaymentResult paymentResult = await paymentService.PayAsync(OrderMapper.MapOrderToPaymentRequest(order), cancellationToken);
                 orderBusinessRules.PaymentShouldBeApproved(paymentResult);
 
                 foreach ((Guid productId, int amount) in requestedAmounts)
