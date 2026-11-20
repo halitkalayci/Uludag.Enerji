@@ -12,6 +12,7 @@ const MESSAGES: Record<string, string> = {
   MultiFactorAlreadyEnabled: 'İki adımlı doğrulama bu hesapta zaten etkin.',
   OtpAuthenticatorNotSetUp: 'Authenticator kurulumu bulunamadı. Lütfen kurulumu yeniden başlatın.',
   InvalidAuthenticatorCode: 'Doğrulama kodu hatalı. Uygulamadaki güncel kodu girin.',
+  AuthenticatorCodeAlreadyUsed: 'Bu doğrulama kodu zaten kullanıldı. Uygulamada yeni kodu bekleyin.',
   TooManyAuthenticatorAttempts: 'Çok fazla hatalı deneme yapıldı. Bir süre sonra tekrar deneyin.',
   InvalidRefreshToken: 'Oturumunuz geçersiz. Lütfen tekrar giriş yapın.',
   RefreshTokenExpired: 'Oturumunuzun süresi doldu. Lütfen tekrar giriş yapın.',
