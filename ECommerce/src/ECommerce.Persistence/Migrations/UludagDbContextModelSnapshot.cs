@@ -22,6 +22,26 @@ namespace ECommerce.Persistence.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("ECommerce.Domain.Entities.Category", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .UseCollation("SQL_Latin1_General_CP1_CI_AS");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("Categories");
+                });
+
             modelBuilder.Entity("ECommerce.Domain.Entities.OperationClaim", b =>
                 {
                     b.Property<Guid>("Id")
@@ -135,6 +155,36 @@ namespace ECommerce.Persistence.Migrations
                         {
                             Id = new Guid("21ba4447-0d0d-4242-935d-8087718d36b5"),
                             Name = "OrderItem.Delete"
+                        },
+                        new
+                        {
+                            Id = new Guid("65f7e5d9-221d-416a-b447-165ee25e0174"),
+                            Name = "Category.Admin"
+                        },
+                        new
+                        {
+                            Id = new Guid("8d887ad1-4f78-45f7-af05-39528dd5f057"),
+                            Name = "Category.Write"
+                        },
+                        new
+                        {
+                            Id = new Guid("3b9a774d-3d8b-419e-adef-2a0d3909875b"),
+                            Name = "Category.Read"
+                        },
+                        new
+                        {
+                            Id = new Guid("646cc778-65fe-4f48-baf9-eafd50912044"),
+                            Name = "Category.Create"
+                        },
+                        new
+                        {
+                            Id = new Guid("a6d3bc82-3a7e-4bb1-93b8-7b6eb8254754"),
+                            Name = "Category.Update"
+                        },
+                        new
+                        {
+                            Id = new Guid("cd6c5aba-a7d4-42be-b9cb-f3f962d5d723"),
+                            Name = "Category.Delete"
                         });
                 });
 
@@ -215,6 +265,9 @@ namespace ECommerce.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("CategoryId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("Name")
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
@@ -223,6 +276,8 @@ namespace ECommerce.Persistence.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CategoryId");
 
                     b.ToTable("Products");
 
@@ -424,6 +479,11 @@ namespace ECommerce.Persistence.Migrations
 
             modelBuilder.Entity("ECommerce.Domain.Entities.Product", b =>
                 {
+                    b.HasOne("ECommerce.Domain.Entities.Category", "Category")
+                        .WithMany("Products")
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.OwnsOne("ECommerce.Domain.ValueObjects.Money", "Price", b1 =>
                         {
                             b1.Property<Guid>("ProductId")
@@ -453,6 +513,8 @@ namespace ECommerce.Persistence.Migrations
                                     Currency = "TRY"
                                 });
                         });
+
+                    b.Navigation("Category");
 
                     b.Navigation("Price")
                         .IsRequired();
@@ -486,6 +548,11 @@ namespace ECommerce.Persistence.Migrations
                     b.Navigation("OperationClaim");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("ECommerce.Domain.Entities.Category", b =>
+                {
+                    b.Navigation("Products");
                 });
 
             modelBuilder.Entity("ECommerce.Domain.Entities.OperationClaim", b =>
