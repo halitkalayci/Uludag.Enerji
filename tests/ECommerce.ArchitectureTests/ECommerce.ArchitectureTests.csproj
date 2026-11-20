@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <PackageReference Include="NetArchTest.Rules" Version="1.3.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Uludag.Core\Uludag.Core.csproj" />
+    <ProjectReference Include="..\..\ECommerce\src\ECommerce.Domain\ECommerce.Domain.csproj" />
+    <ProjectReference Include="..\..\ECommerce\src\ECommerce.Application\ECommerce.Application.csproj" />
+    <ProjectReference Include="..\..\ECommerce\src\ECommerce.Persistence\ECommerce.Persistence.csproj" />
+    <ProjectReference Include="..\..\ECommerce\src\ECommerce.WebAPI\ECommerce.WebAPI.csproj" />
+  </ItemGroup>
+
+</Project>

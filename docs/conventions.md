@@ -56,4 +56,5 @@
 - RS0030 (BannedApiAnalyzers, `Directory.Build.props` + `BannedSymbols.txt`): `FromSqlRaw`,
   `ExecuteSqlRaw(Async)`, `SqlQueryRaw` build **hatası**.
 - `Nullable` enable (uyarı düzeyinde; mevcut 10 uyarı var, hataya çevrilmedi).
-- `scripts/check`: .NET build + Angular build. Prettier kontrolü B-4 sonrası eklenecek.
+- `scripts/check`: .NET build + Angular build + testler (fast: unit + mimari; full: + entegrasyon, Docker gerekir).
+  Prettier kontrolü B-4 sonrası eklenecek.

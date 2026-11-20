@@ -1,7 +1,9 @@
 # Testing
 
-> Bootstrap 2026-11-19'da onaylandı. **Bugün repoda hiç test yok**; aşağıdaki düzen ilk spec
-> (test altyapısı) ile kurulur ve `scripts/check.conf`'taki planlı adımları etkinleştirir.
+> Bootstrap 2026-11-19'da onaylandı. Unit, mimari ve entegrasyon katmanları spec 0001 (test altyapısı) ile
+> kuruldu; `scripts/check.conf`'ta `test [fast]` ve `integration` adımları etkin. `ng test` henüz yok (ayrı spec).
+> Test projeleri `tests/` altında; ortak ayarlar `tests/Directory.Build.props` (xUnit v3, VSTest adaptörü,
+> `tests/xunit.runner.json` ile InvariantCulture).
 
 ## The contract
 - Every acceptance criterion maps to at least one test (criterion ↔ test map lives in the plan).

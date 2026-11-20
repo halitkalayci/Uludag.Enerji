@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="9.0.23" />
+    <PackageReference Include="Testcontainers.MsSql" Version="4.17.0" />
+    <PackageReference Include="Testcontainers.Redis" Version="4.17.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\ECommerce\src\ECommerce.WebAPI\ECommerce.WebAPI.csproj" />
+  </ItemGroup>
+
+</Project>

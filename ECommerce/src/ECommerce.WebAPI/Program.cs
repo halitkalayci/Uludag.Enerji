@@ -134,3 +134,6 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+// WebApplicationFactory<Program> (tests/ECommerce.IntegrationTests) için: top-level Program varsayılan olarak internal.
+public partial class Program;
