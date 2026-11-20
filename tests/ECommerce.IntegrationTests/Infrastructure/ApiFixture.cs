@@ -28,6 +28,10 @@ namespace ECommerce.IntegrationTests.Infrastructure
         // Rate limiting Auth testlerinin konusu değil (spec 0002, Out of scope) — kova pratikte hiç dolmaz.
         private const int RateLimitCapacity = 1_000_000;
 
+        // Fake ödeme paylaşılan host'ta hep onaylar (docs/testing.md, Determinism; spec 0008 / A-1): aksi halde sipariş
+        // veren her test %25 olasılıkla kırmızı olur. Ret isteyen testler türetilmiş host ya da stub kullanır (OrderArrange).
+        private const string FakePaymentDeclineRate = "0";
+
         public WebApplicationFactory<Program> Factory { get; private set; } = null!;
 
         // Token imza anahtarı: testler süresi dolmuş/sahte token üretebilsin diye dışa açıktır (spec 0003).
@@ -51,6 +55,7 @@ namespace ECommerce.IntegrationTests.Infrastructure
                 builder.UseSetting("TokenOptions:SecurityKey", TokenSecurityKey);
                 builder.UseSetting("MultiFactorOptions:Issuer", MultiFactorIssuer);
                 builder.UseSetting("RateLimitOptions:Capacity", RateLimitCapacity.ToString(System.Globalization.CultureInfo.InvariantCulture));
+                builder.UseSetting("FakePayment:DeclineRate", FakePaymentDeclineRate);
             });
 
             await using AsyncServiceScope scope = Factory.Services.CreateAsyncScope();
