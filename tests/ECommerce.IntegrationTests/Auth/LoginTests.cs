@@ -46,6 +46,9 @@ namespace ECommerce.IntegrationTests.Auth
             LoginResult result = await AuthArrange.ReadJsonAsync<LoginResult>(response);
             Assert.Equal("CodeRequired", result.MultiFactorStatus);
             Assert.False(string.IsNullOrWhiteSpace(result.MultiFactorToken));
+            Assert.NotNull(result.MultiFactorTokenExpiration);
+            Assert.Equal(DateTimeKind.Utc, result.MultiFactorTokenExpiration.Value.Kind);
+            Assert.True(result.MultiFactorTokenExpiration.Value > DateTime.UtcNow, "MFA token'ının süresi gelecekte bitmeli.");
             Assert.Null(result.AccessToken);
         }
 
