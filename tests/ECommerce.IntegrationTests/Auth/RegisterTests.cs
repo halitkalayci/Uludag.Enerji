@@ -123,10 +123,14 @@ namespace ECommerce.IntegrationTests.Auth
                 _ => throw new ArgumentOutOfRangeException(nameof(invalidCase))
             };
             using HttpClient client = arrange.CreateClient();
+            // E-posta hiç gönderilmeyen vakada adresle arama anlamsızdır: toplam kullanıcı sayısı karşılaştırılır
+            // (entegrasyon testleri tek collection'da sırayla koşar, sayım deterministiktir).
+            int usersBefore = await CountUsersAsync();
 
             HttpResponseMessage response = await client.PostAsJsonAsync(AuthArrange.RegisterPath, body, TestContext.Current.CancellationToken);
 
             await ProblemAssert.IsProblemAsync(response, HttpStatusCode.BadRequest);
+            Assert.Equal(usersBefore, await CountUsersAsync());
             // Boş e-posta vakasında oluşabilecek kullanıcı boş adreslidir; diğerlerinde üretilen adresle aranır.
             Assert.Empty(await FindUsersAsync(invalidCase == "email-empty" ? "" : email));
         }
@@ -145,6 +149,13 @@ namespace ECommerce.IntegrationTests.Auth
 
             await ProblemAssert.IsProblemAsync(response, HttpStatusCode.BadRequest);
             Assert.Empty(await FindUsersAsync(invalidEmail));
+        }
+
+        private async Task<int> CountUsersAsync()
+        {
+            await using AsyncServiceScope scope = fixture.Factory.Services.CreateAsyncScope();
+            UludagDbContext dbContext = scope.ServiceProvider.GetRequiredService<UludagDbContext>();
+            return await dbContext.Users.CountAsync(TestContext.Current.CancellationToken);
         }
 
         // Büyük/küçük harf duyarsız arama: aynı adresin farklı yazımları da sayılır.
