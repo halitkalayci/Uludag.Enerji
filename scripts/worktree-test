@@ -1,0 +1,209 @@
+#!/bin/sh
+# scripts/worktree-test — proves scripts/worktree and the worktree hooks behave as spec 0006 says.
+# Runs as the `worktree [fast]` step of scripts/check. Every scenario builds throwaway git
+# repositories (a bare "origin" + a main tree) in a temp dir OUTSIDE the repo; a squash-merged
+# pull request is played by a stub GitHub CLI (WORKTREE_GH). No network, no real repo touched.
+# Exit 0 = all scenarios pass, 1 = at least one failed.
+set -u
+ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+W="$ROOT/scripts/worktree"
+GUARD="$ROOT/.claude/hooks/worktree-guard.sh"
+SHIPPED="$ROOT/.claude/hooks/protect-shipped.sh"
+passed=0
+failed=0
+TMP=$(mktemp -d "${TMPDIR:-/tmp}/worktree-test.XXXXXX") || { echo "worktree-test: mktemp failed" >&2; exit 1; }
+trap 'rm -rf "$TMP"' EXIT INT TERM
+
+# isolated git identity and config (CI has no global identity; the user's config must not leak in)
+printf '[user]\n\tname = worktree-test\n\temail = worktree-test@example.invalid\n[init]\n\tdefaultBranch = main\n[advice]\n\tdetachedHead = false\n' > "$TMP/gitconfig"
+export GIT_CONFIG_GLOBAL="$TMP/gitconfig" GIT_CONFIG_NOSYSTEM=1
+unset GIT_DIR GIT_WORK_TREE
+
+# stub GitHub CLI: `gh pr view <branch> …` prints $TMP/gh/<branch, / → _> or fails like gh does
+mkdir -p "$TMP/bin" "$TMP/gh"
+cat > "$TMP/bin/gh" <<EOF
+#!/bin/sh
+f="$TMP/gh/\$(printf '%s' "\$3" | tr '/' '_')"
+[ -f "\$f" ] || { echo 'no pull requests found for branch' >&2; exit 1; }
+cat "\$f"
+EOF
+chmod +x "$TMP/bin/gh"
+export WORKTREE_GH="$TMP/bin/gh"
+pr() { printf '%s\n' "$2" > "$TMP/gh/$(printf '%s' "$1" | tr '/' '_')"; }   # pr <branch> "<STATE> <head> <merge commit>"
+
+# --- assertions on the last run: $out and $rc ---
+report() { if [ "$1" -eq 0 ]; then passed=$((passed + 1)); echo "ok    $2"
+           else failed=$((failed + 1)); echo "FAIL  $2"; printf '%s\n' "$out" | sed 's/^/      | /'; fi; }
+exits()  { [ "$rc" -eq "$1" ]; report $? "$2 (exit $1)"; }
+has()    { printf '%s\n' "$out" | grep -qF -- "$1"; report $? "$2"; }
+hasnt()  { if printf '%s\n' "$out" | grep -qF -- "$1"; then report 1 "$2"; else report 0 "$2"; fi; }
+quiet()  { "$@" >/dev/null 2>&1; }
+truth()  { if quiet "$@"; then report 0 "$T"; else report 1 "$T"; fi; }   # T = name
+falsy()  { if quiet "$@"; then report 1 "$T"; else report 0 "$T"; fi; }
+
+# --- fixtures ---
+n=0
+fixture() {   # fresh origin + main tree "Repo"; sets S, M (main tree)
+  n=$((n + 1)); S="$TMP/s$n"; M="$S/Repo"
+  mkdir -p "$S"
+  git init -q --bare "$S/origin.git"
+  git init -q "$M"
+  printf 'node_modules/\n' > "$M/.gitignore"; echo base > "$M/file.txt"
+  git -C "$M" add . && git -C "$M" commit -qm base
+  git -C "$M" remote add origin "$S/origin.git"
+  git -C "$M" push -q -u origin main
+}
+wt()      { out=$(cd "$1" && shift && sh "$W" "$@" 2>&1); rc=$?; }          # wt <cwd> <args…>
+dirof()   { printf '%s/Repo-%s' "$S" "$(printf '%s' "$1" | tr '/' '-')"; }
+work()    { d=$(dirof "$1"); echo "$2" >> "$d/file.txt"; git -C "$d" commit -qam "$2"; git -C "$d" push -q origin "$1"; }
+mergeff() { git -C "$M" merge -q --no-ff "$1" -m "merge $1" && git -C "$M" push -q origin main; }
+squash()  { git -C "$M" merge -q --squash "$1" >/dev/null && git -C "$M" commit -qm "squash $1" && git -C "$M" push -q origin main
+            pr "$1" "MERGED $(git -C "$M" rev-parse "$1") $(git -C "$M" rev-parse HEAD)"; }
+
+echo "== scripts/worktree new =="
+fixture
+wt "$M" new feature/0001-x
+exits 0 "new: creates sibling worktree from origin/main"
+D=$(dirof feature/0001-x)
+T="new: creates sibling worktree from origin/main (HEAD = origin/main)"
+truth test "$(git -C "$D" rev-parse HEAD)" = "$(git -C "$M" rev-parse origin/main)"
+T="new: dir name is repo-branch with slash to dash"; truth test -d "$S/Repo-feature-0001-x"
+T="new: dir name is repo-branch with slash to dash (sibling, not inside the main tree)"; falsy test -e "$M/Repo-feature-0001-x"
+T="new: branch has no upstream"; falsy git -C "$D" rev-parse --abbrev-ref '@{upstream}'
+before=$(git -C "$M" worktree list | wc -l)
+wt "$M" new feature/0001-x
+exits 0 "new: resumes existing worktree"; has "resume:" "new: resumes existing worktree (says resume)"
+has "worktree: $(git -C "$D" rev-parse --path-format=absolute --show-toplevel)" "new: resumes existing worktree (same directory)"
+T="new: resumes existing worktree (no second worktree)"; truth test "$(git -C "$M" worktree list | wc -l)" -eq "$before"
+git -C "$M" branch -q feature/0002-y origin/main
+wt "$M" new feature/0002-y
+exits 0 "new: attaches existing branch without worktree"; has "attached: existing branch" "new: attaches existing branch without worktree (says so)"
+T="new: attaches existing branch without worktree (directory)"; truth test -d "$(dirof feature/0002-y)"
+git -C "$M" push -q origin origin/main:refs/heads/feature/0003-z && git -C "$M" fetch -q origin
+wt "$M" new feature/0003-z
+has "attached: remote branch" "new: tracks remote-only branch"
+wt "$M" new main
+exits 2 "new: refuses the default branch"
+wt "$D" new feature/0004-from-worktree
+T="new: run from a worktree still opens a sibling of the main tree"; truth test -d "$(dirof feature/0004-from-worktree)"
+
+echo "== scripts/worktree merged =="
+fixture
+wt "$M" new feature/a; work feature/a a1; mergeff feature/a
+wt "$M" merged feature/a
+exits 0 "merged: ancestor of origin/main"
+wt "$M" new feature/fresh
+wt "$M" merged feature/fresh
+exits 1 "merged: fresh branch with no own commits → not merged"
+wt "$M" new feature/sq; work feature/sq s1; squash feature/sq
+wt "$M" merged feature/sq
+exits 0 "merged: squash PR merged, head matches, merge commit in main"
+has "ok    pull request state MERGED" "merged: squash PR merged, head matches, merge commit in main (names each check)"
+wt "$M" new feature/open; work feature/open o1
+pr feature/open "OPEN $(git -C "$M" rev-parse feature/open) -"
+wt "$M" merged feature/open
+exits 1 "merged: PR open → not merged, names failed check"
+has "FAIL  pull request state is OPEN" "merged: PR open → not merged, names failed check (FAIL line)"
+wt "$M" new feature/diff; work feature/diff d1; squash feature/diff; work feature/diff d2
+wt "$M" merged feature/diff
+exits 1 "merged: PR merged but local tip differs → not merged"
+has "!= local tip" "merged: PR merged but local tip differs → not merged (FAIL line)"
+wt "$M" new feature/nopr; work feature/nopr n1
+wt "$M" merged feature/nopr
+exits 1 "merged: no PR / gh missing → not merged"; has "no pull request found" "merged: no PR / gh missing → not merged (no PR)"
+out=$(cd "$M" && WORKTREE_GH="$TMP/no-such-gh" sh "$W" merged feature/nopr 2>&1); rc=$?
+exits 1 "merged: no PR / gh missing → not merged (gh missing)"; has "not available" "merged: no PR / gh missing → not merged (says gh is missing)"
+
+echo "== scripts/worktree clean =="
+fixture
+wt "$M" new feature/um; work feature/um u1
+wt "$M" clean feature/um
+exits 1 "clean: refuses when not merged"
+T="clean: refuses when not merged (directory kept)"; truth test -d "$(dirof feature/um)"
+T="clean: refuses when not merged (branch kept)"; truth git -C "$M" show-ref --verify --quiet refs/heads/feature/um
+wt "$M" new feature/ok; work feature/ok k1; squash feature/ok
+mkdir -p "$(dirof feature/ok)/node_modules/pkg"; echo x > "$(dirof feature/ok)/node_modules/pkg/i.js"
+wt "$M" clean feature/ok
+exits 0 "clean: removes dir, worktree entry, local and remote branch"
+has "cleaned: feature/ok" "clean: ignored files do not block"
+hasnt "REMAINS" "clean: removes dir, worktree entry, local and remote branch (no remnant reported)"
+T="clean: removes dir, worktree entry, local and remote branch (directory gone)"; falsy test -e "$(dirof feature/ok)"
+T="clean: removes dir, worktree entry, local and remote branch (no worktree entry)"; falsy sh -c "git -C '$M' worktree list | grep -q 'Repo-feature-ok'"
+T="clean: removes dir, worktree entry, local and remote branch (no local branch)"; falsy git -C "$M" show-ref --verify --quiet refs/heads/feature/ok
+T="clean: removes dir, worktree entry, local and remote branch (no remote branch)"; falsy git -C "$M" ls-remote --exit-code --heads origin feature/ok
+wt "$M" new feature/gone; work feature/gone g1; squash feature/gone; git -C "$M" push -q origin --delete feature/gone
+wt "$M" clean feature/gone
+exits 0 "clean: remote branch already deleted is not an error"
+wt "$M" new feature/lock; work feature/lock l1; squash feature/lock; git -C "$M" worktree lock "$(dirof feature/lock)"
+wt "$M" clean feature/lock
+exits 1 "clean: locked worktree reports REMAINS and exits 1"; has "REMAINS directory" "clean: locked worktree reports REMAINS and exits 1 (names it)"
+git -C "$M" worktree unlock "$(dirof feature/lock)"
+wt "$M" new feature/mod; work feature/mod m1; squash feature/mod; echo dirty >> "$(dirof feature/mod)/file.txt"
+wt "$M" clean feature/mod
+exits 1 "clean: modified file → nothing deleted"
+T="clean: modified file → nothing deleted (directory and branch kept)"
+truth sh -c "test -d '$(dirof feature/mod)' && git -C '$M' show-ref --verify --quiet refs/heads/feature/mod"
+wt "$M" new feature/untr; work feature/untr t1; squash feature/untr; echo new > "$(dirof feature/untr)/new.txt"
+wt "$M" clean feature/untr
+exits 1 "clean: untracked file → nothing deleted"
+T="clean: untracked file → nothing deleted (file kept)"; truth test -f "$(dirof feature/untr)/new.txt"
+wt "$M" new feature/unp; work feature/unp p1; squash feature/unp
+echo local >> "$(dirof feature/unp)/file.txt"; git -C "$(dirof feature/unp)" commit -qam unpushed
+wt "$M" clean feature/unp
+exits 1 "clean: unpushed commit → nothing deleted"; has "!= local tip" "clean: unpushed commit → nothing deleted (names it)"
+T="clean: unpushed commit → nothing deleted (commit kept)"; truth git -C "$M" show-ref --verify --quiet refs/heads/feature/unp
+wt "$M" clean main
+exits 2 "clean: main tree's branch is never removed"
+T="clean: main tree's branch is never removed (main tree intact)"; truth test -f "$M/file.txt"
+
+echo "== scripts/worktree sweep =="
+fixture
+wt "$M" new feature/done; work feature/done x1; mergeff feature/done
+wt "$M" new feature/own; work feature/own y1; mergeff feature/own
+wt "$M" new feature/wip; work feature/wip z1
+wt "$(dirof feature/own)" sweep
+exits 0 "sweep: cleans merged clean worktree, skips own"
+has "cleaned feature/done" "sweep: cleans merged clean worktree, skips own (cleaned)"
+has "skip    feature/own" "sweep: cleans merged clean worktree, skips own (own skipped)"
+T="sweep: cleans merged clean worktree, skips own (own still there)"; truth test -d "$(dirof feature/own)"
+has "kept    feature/wip" "sweep: unmerged worktree untouched"
+T="sweep: unmerged worktree untouched (directory and branch kept)"
+truth sh -c "test -d '$(dirof feature/wip)' && git -C '$M' show-ref --verify --quiet refs/heads/feature/wip"
+
+echo "== hooks =="
+fixture
+wt "$M" new feature/h
+H=$(dirof feature/h)
+json_q() { printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'; }
+edit()  { out=$(printf '{"cwd":"%s","tool_name":"Edit","tool_input":{"file_path":"%s"}}' "$(json_q "$1")" "$(json_q "$2")" | sh "$GUARD" 2>&1); rc=$?; }
+bash_() { out=$(printf '{"cwd":"%s","tool_name":"Bash","tool_input":{"command":"%s"}}' "$(json_q "$1")" "$(json_q "$2")" | sh "$GUARD" 2>&1); rc=$?; }
+edit "$M" "$M/file.txt";            exits 2 "guard: blocks Edit in main tree"; has "Blocked" "guard: blocks Edit in main tree (says why)"
+edit "$M" "$M/new/dir/x.md";        exits 2 "guard: blocks Write of a new file in main tree"
+edit "$M" "$H/file.txt";            exits 0 "guard: allows Edit in worktree"
+edit "$H" "$H/file.txt";            exits 0 "guard: allows Edit in worktree (session started there)"
+mkdir -p "$S/elsewhere"
+edit "$M" "$S/elsewhere/notes.md";  exits 0 "guard: allows file outside repo"
+bash_ "$M" "git checkout -b x";     exits 2 "guard: blocks git checkout in main tree"
+bash_ "$M" "git status && git switch main"; exits 2 "guard: blocks git switch in main tree (later in a chain)"
+bash_ "$M" "git -C $H commit -m x";       exits 0 "guard: allows git -C <worktree> commit"
+bash_ "$M" "git -C ../Repo-feature-h add file.txt"; exits 0 "guard: allows git -C <worktree> commit (relative path)"
+bash_ "$M" "cd $H && git commit -m x";    exits 0 "guard: allows cd <worktree> && git commit"
+bash_ "$H" "cd $M && git commit -m x";    exits 2 "guard: blocks cd <main> && git commit from a worktree"
+bash_ "$H" "git -C $M stash";             exits 2 "guard: blocks git -C <main> stash"
+bash_ "$M" "git fetch origin && git worktree add ../Repo-x -b x origin/main"; exits 0 "guard: allows fetch and worktree add in main tree"
+bash_ "$M" "git log --oneline -3 | head"; exits 0 "guard: allows read-only git in main tree"
+if command -v cygpath >/dev/null 2>&1; then
+  edit "$M" "$(cygpath -w "$M/file.txt")"; exits 2 "guard: Windows backslash path in main tree is blocked"
+  edit "$M" "$(cygpath -w "$H/file.txt")"; exits 0 "guard: Windows backslash path in worktree is allowed"
+fi
+out=$(printf '{"tool_input":{"file_path":"%s/specs/done/0001-x.md"}}' "$H" | sh "$SHIPPED" 2>&1); rc=$?
+exits 2 "guard: protect-shipped still blocks specs/done"
+
+echo "== no merge in the scripts =="
+# PB-1: scripts/worktree never runs `gh pr merge` or `git merge` — merging stays with the human.
+out=$(grep -nE '^[^#]*((^|[^[:alnum:]_-])(git|g)[[:space:]]+(-C[[:space:]]+[^[:space:]]+[[:space:]]+)?merge([[:space:]]|$)|pr[[:space:]]+merge)' "$W" "$GUARD" "$ROOT/.claude/hooks/worktree-sweep.sh" 2>&1)
+if [ -z "$out" ]; then rc=0; else rc=1; fi
+exits 0 "scripts never merge"
+
+echo "== worktree-test: $passed passed, $failed failed =="
+[ "$failed" -eq 0 ]

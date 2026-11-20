@@ -1,0 +1,176 @@
+#!/bin/sh
+# scripts/worktree — every session that changes the repo works in its own worktree, and a worktree
+# whose branch is verifiably merged leaves nothing behind (docs/git.md, Worktrees; spec 0006).
+#
+#   scripts/worktree new <branch>     open (or resume) the worktree of <branch>
+#   scripts/worktree merged <branch>  prove the merge with git/GitHub evidence — exit 0 merged, 1 not
+#   scripts/worktree clean <branch>   merged + clean → remove directory, worktree entry, local and
+#                                     remote branch; report every remnant — exit 0 none left, 1 otherwise
+#   scripts/worktree sweep            clean every merged, clean worktree; report the rest
+#
+# Works from the main tree or any worktree. Paths are always absolute (a relative path given to
+# git -C resolves against the main tree and lands inside it). A user's word is never evidence:
+# only `merged` decides. This script never merges anything.
+# Test seam: WORKTREE_GH names the GitHub CLI (default: gh).
+set -u
+GH=${WORKTREE_GH:-gh}
+
+die() { echo "worktree: $*" >&2; exit 2; }
+
+common=$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null) || die "not inside a git repository"
+case "$common" in */.git) ;; *) die "unexpected repository layout (common dir: $common)" ;; esac
+MAIN=${common%/.git}
+REPO=${MAIN##*/}
+PARENT=${MAIN%/*}
+
+g() { git -C "$MAIN" "$@"; }
+
+# K-3: <parent of the main tree>/<repo>-<branch with "/" → "-">
+wt_dir() { printf '%s/%s-%s\n' "$PARENT" "$REPO" "$(printf '%s' "$1" | tr '/' '-')"; }
+
+# the worktree that has <branch> checked out (empty if none)
+wt_of() {
+  g worktree list --porcelain | awk -v ref="branch refs/heads/$1" '
+    /^worktree / { p = substr($0, 10) }
+    $0 == ref    { print p; exit }'
+}
+
+fetch() { [ "${WORKTREE_FETCHED:-}" = 1 ] || g fetch --prune --quiet origin; }
+
+cmd_new() {
+  b=$1
+  g check-ref-format --branch "$b" >/dev/null 2>&1 || die "invalid branch name: $b"
+  case "$b" in main|master) die "refusing: $b is the default branch — work happens on a feature branch (docs/git.md)" ;; esac
+  fetch || die "git fetch origin failed"
+  existing=$(wt_of "$b")
+  if [ -n "$existing" ]; then
+    [ "$existing" = "$MAIN" ] && die "branch $b is checked out in the main working tree — the main tree is nobody's workspace; a human frees it"
+    echo "resume: $b already has a worktree"
+    echo "worktree: $existing"
+    return 0
+  fi
+  dir=$(wt_dir "$b")
+  [ -e "$dir" ] && die "$dir exists but is not the worktree of $b — left for a human"
+  if g show-ref --verify --quiet "refs/heads/$b"; then
+    g worktree add --quiet "$dir" "$b" || die "git worktree add failed"
+    echo "attached: existing branch $b"
+  elif g show-ref --verify --quiet "refs/remotes/origin/$b"; then
+    g worktree add --quiet --track -b "$b" "$dir" "origin/$b" || die "git worktree add failed"
+    echo "attached: remote branch origin/$b"
+  else
+    g worktree add --quiet --no-track -b "$b" "$dir" origin/main || die "git worktree add failed"
+    echo "created: $b from origin/main"
+  fi
+  # CB-3: never leave the default branch as upstream (a bare push would go to main)
+  up=$(g rev-parse --abbrev-ref "$b@{upstream}" 2>/dev/null) || up=
+  case "$up" in origin/main|origin/master) g branch --unset-upstream "$b" ;; esac
+  echo "worktree: $dir"
+  echo "next: work only under that directory; run 'npm ci --prefix ECommerce/client' there before scripts/check"
+}
+
+# K-2. Prints one ok/FAIL line per check.
+cmd_merged() {
+  b=$1
+  fetch || { echo "FAIL  git fetch origin failed — nothing can be proven"; return 1; }
+  tip=$(g rev-parse --quiet --verify "refs/heads/$b^{commit}") || { echo "FAIL  no local branch $b"; return 1; }
+  # A true merge puts the tip in origin/main off its first-parent line. A tip ON that line is a
+  # branch with no commits of its own (e.g. freshly created) — that is not a merge.
+  if g merge-base --is-ancestor "$tip" origin/main; then
+    if g rev-list --first-parent origin/main | grep -qx "$tip"; then
+      echo "info  $b has no commits of its own on top of origin/main — not a merge"
+    else
+      echo "ok    $b ($tip) is merged into origin/main"
+      return 0
+    fi
+  else
+    echo "info  $b is not an ancestor of origin/main — looking for a squash-merged pull request"
+  fi
+  command -v "$GH" >/dev/null 2>&1 || { echo "FAIL  GitHub CLI ($GH) not available — a squash-merge cannot be proven"; return 1; }
+  pr=$(cd "$MAIN" && "$GH" pr view "$b" --json state,headRefOid,mergeCommit \
+        --jq '[.state, .headRefOid, (.mergeCommit.oid // "-")] | join(" ")' 2>/dev/null) \
+    || { echo "FAIL  no pull request found for $b"; return 1; }
+  set -- $pr
+  state=${1:-?} head=${2:-?} mc=${3:--}
+  rc=0
+  if [ "$state" = MERGED ]; then echo "ok    pull request state MERGED"
+  else echo "FAIL  pull request state is $state, not MERGED"; rc=1; fi
+  if [ "$head" = "$tip" ]; then echo "ok    pull request head = local tip $tip"
+  else echo "FAIL  pull request head $head != local tip $tip (unpushed or diverged commits)"; rc=1; fi
+  if [ "$mc" != - ] && g merge-base --is-ancestor "$mc" origin/main 2>/dev/null; then
+    echo "ok    merge commit $mc is on origin/main"
+  else echo "FAIL  merge commit $mc is not on origin/main"; rc=1; fi
+  return $rc
+}
+
+cmd_clean() {
+  b=$1
+  dir=$(wt_of "$b")
+  [ -n "$dir" ] && [ "$dir" = "$MAIN" ] && die "refusing: $b is checked out in the main working tree"
+  if ! cmd_merged "$b"; then echo "not merged — nothing removed"; return 1; fi
+  # CB-6: work that exists only here is never deleted (ignored files such as node_modules are not work)
+  if [ -n "$dir" ]; then
+    st=$(git -C "$dir" status --porcelain --untracked-files=all 2>&1) || { echo "FAIL  cannot read status of $dir: $st"; echo "nothing removed"; return 1; }
+    if [ -n "$st" ]; then
+      echo "FAIL  uncommitted or untracked files in $dir:"
+      printf '%s\n' "$st" | sed 's/^/        /'
+      echo "dirty — nothing removed; a human decides"
+      return 1
+    fi
+    g worktree remove "$dir" || echo "FAIL  git worktree remove $dir"
+  fi
+  g worktree prune
+  g branch --quiet -D "$b" 2>/dev/null || echo "FAIL  git branch -D $b"
+  if g ls-remote --exit-code --heads origin "$b" >/dev/null 2>&1; then
+    g push --quiet origin --delete "$b" || echo "FAIL  git push origin --delete $b"
+  else
+    echo "info  remote branch $b already gone"
+  fi
+  g fetch --prune --quiet origin
+  # CB-5 evidence: every remnant, by name
+  rc=0
+  d=${dir:-$(wt_dir "$b")}
+  if [ -e "$d" ]; then echo "REMAINS directory $d"; rc=1; else echo "absent  directory $d"; fi
+  if g worktree list --porcelain | grep -qx "worktree $d"; then echo "REMAINS worktree entry $d"; rc=1; else echo "absent  worktree entry"; fi
+  if g show-ref --verify --quiet "refs/heads/$b"; then echo "REMAINS local branch $b"; rc=1; else echo "absent  local branch $b"; fi
+  if g ls-remote --exit-code --heads origin "$b" >/dev/null 2>&1 || g show-ref --verify --quiet "refs/remotes/origin/$b"; then
+    echo "REMAINS remote branch origin/$b"; rc=1
+  else echo "absent  remote branch origin/$b"; fi
+  [ $rc -eq 0 ] && echo "cleaned: $b" || echo "incomplete: remnants of $b listed above — the next sweep retries"
+  return $rc
+}
+
+cmd_sweep() {
+  fetch || die "git fetch origin failed"
+  self=$(git rev-parse --path-format=absolute --show-toplevel 2>/dev/null) || self=
+  list=$(g worktree list --porcelain | awk '
+    /^worktree / { p = substr($0, 10) }
+    /^branch refs\/heads\// { print p "\t" substr($0, 19) }')
+  rc=0
+  tab=$(printf '\t')
+  while IFS="$tab" read -r p b; do
+    [ -n "$p" ] || continue
+    [ "$p" = "$MAIN" ] && continue
+    if [ "$p" = "$self" ]; then echo "skip    $b — this session's own worktree ($p)"; continue; fi
+    out=$(WORKTREE_FETCHED=1 cmd_clean "$b" 2>&1)
+    case $? in
+      0) echo "cleaned $b ($p)" ;;
+      *) if printf '%s\n' "$out" | grep -q '^REMAINS'; then
+           echo "REMAINS $b ($p):"; printf '%s\n' "$out" | grep '^REMAINS' | sed 's/^/        /'; rc=1
+         else
+           why=$(printf '%s\n' "$out" | grep -m1 '^FAIL' | sed 's/^FAIL  //')
+           echo "kept    $b — ${why:-not merged} ($p)"
+         fi ;;
+    esac
+  done <<EOF
+$list
+EOF
+  return $rc
+}
+
+[ $# -ge 1 ] || die "usage: scripts/worktree new|merged|clean <branch> | sweep"
+cmd=$1; shift
+case "$cmd" in
+  new|merged|clean) [ $# -eq 1 ] || die "usage: scripts/worktree $cmd <branch>"; "cmd_$cmd" "$1" ;;
+  sweep) [ $# -eq 0 ] || die "usage: scripts/worktree sweep"; cmd_sweep ;;
+  *) die "unknown command: $cmd (new | merged | clean | sweep)" ;;
+esac
