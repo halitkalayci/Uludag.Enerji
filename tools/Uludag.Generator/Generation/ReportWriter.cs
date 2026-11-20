@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Uludag.Generator.Analysis;
 using Uludag.Generator.Workspace;
 
@@ -39,13 +40,16 @@ namespace Uludag.Generator.Generation
             output.WriteLine("Sonraki adımlar:");
             output.WriteLine($"  1. ZORUNLU — migration: yeni tablo ve operation claim seed'leri için migration ekleyin. Migration olmadan tablo");
             output.WriteLine($"     oluşmaz ve EF Core 9 bekleyen model değişikliğinde Migrate'i durdurur:");
-            output.WriteLine($"     dotnet ef migrations add add_{m.Camel.TrimStart('@').ToLowerInvariant()} -p ECommerce/src/ECommerce.Persistence -s ECommerce/src/ECommerce.WebAPI");
+            output.WriteLine($"     dotnet ef migrations add add_{SnakeCase(m.Entity)} -p ECommerce/src/ECommerce.Persistence -s ECommerce/src/ECommerce.WebAPI");
             output.WriteLine($"  2. Entity'ye özgü iş kuralları (ör. ad benzersizliği): {features}/Rules/{m.Entity}BusinessRules.cs —");
             output.WriteLine($"     handler'dan çağırın; handler'da if/else ve mapping yok (F-7).");
             output.WriteLine($"  3. Kimliğe bağlı alanlar (kullanıcı, tarih, fiyat, toplam) istemciden alınmaz: komut alanlarını gözden geçirin.");
             output.WriteLine($"  4. Alan uzunlukları, indeksler, ilişkiler: ECommerce/src/ECommerce.Persistence/Configurations/{m.Entity}Configuration.cs");
             output.WriteLine($"  5. Mesaj metinleri: {features}/Locales/{m.Entity}Locale.{{tr,en}}.yaml");
         }
+
+        // Mevcut migration adlarıyla aynı biçim: OrderItem -> order_item (ör. add_order_user).
+        private static string SnakeCase(string name) => Regex.Replace(name, "(?<!^)([A-Z])", "_$1").ToLowerInvariant();
 
         private static string Describe(PropertyModel p) => p.Kind switch
         {

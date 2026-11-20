@@ -122,6 +122,16 @@ namespace Uludag.Generator.Tests
         }
 
         [Fact]
+        public void Crud_Report_MigrationNameIsSnakeCase()
+        {
+            using var repo = TestRepo.Create();
+
+            RunResult result = Run(repo, "crud", "OrderItem", "--dry-run");
+
+            Assert.Contains("dotnet ef migrations add add_order_item -p ECommerce/src/ECommerce.Persistence -s ECommerce/src/ECommerce.WebAPI", result.Output);
+        }
+
+        [Fact]
         public void Map_NavigationAndCollection_SkippedAndReported()
         {
             using var repo = CategoryRepo();
