@@ -49,6 +49,15 @@
   Route'taki `id` gövdedeki `Id`'yi ezer.
 - Ham SQL yasak: LINQ veya `FromSql($"...")` / `ExecuteSql($"...")` (interpolated, parametreli).
 
+## Code generation
+- Yeni bir Domain entity'si için CRUD gerekiyorsa dosyalar elle yazılmaz: önce `uludag-gen crud <Entity>`
+  (önizleme: `--dry-run`), sonra üretilen dosyalar düzenlenir. Araç Naming, F-5 ve F-7 kurallarına uyan 16 dosyayı
+  üretir ve DbSet, repository DI ve operation claim seed kayıtlarını ekler (`tools/Uludag.Generator/README.md`).
+- Üretimden sonra: **migration zorunlu** (aracın yazdığı komut); entity'ye özgü kurallar `Rules`'a; kimliğe bağlı
+  alanlar (Data rules) komutlardan çıkarılır; uzunluk/indeks/ilişki `Configuration`'a; mesajlar `Locales`'e.
+- Var olan bir feature yeniden üretilmez; `--force` yalnızca aracın kendi ürettiği dosyaların üzerine yazmak içindir.
+- Kurulum ve güncelleme: `sh tools/Uludag.Generator/install.sh`; şablon değişince yeniden çalıştırılır.
+
 ## Known traps
 <!-- Starts empty. "<trap> — <what to do instead> — from <spec/finding>". Added at triage (Amendment A-n). -->
 - Benzersizlik kuralı yalnızca Rules'ta kontrol-sonra-ekle ile yazılırsa eşzamanlı istekte delinir; `nvarchar(max)` kolona index konamaz — kolona uzunluk + DB unique index ekle, repository'de 2601/2627 ihlalini aynı kuralın `BusinessException`'ına çevir — from spec 0002 / A-2 (review Info-4)

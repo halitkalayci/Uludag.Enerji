@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\tools\Uludag.Generator\Uludag.Generator.csproj" />
+  </ItemGroup>
+
+</Project>

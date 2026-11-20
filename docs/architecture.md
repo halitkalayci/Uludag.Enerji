@@ -22,6 +22,7 @@ desenlerin (mediator, pipeline behavior, business rules, mapper) görünür ve �
 | `ECommerce.WebAPI` | HTTP giriş noktası: controller'lar, middleware (ProblemDetails, rate limiting), DI kompozisyonu | HTTP sözleşmesi |
 | `Uludag.Core` | Yeniden kullanılabilir çekirdek: mediator + behavior'lar, JWT, MFA/OTP, hashing/şifreleme, cache, Leaky Bucket rate limiting | Çapraz kesen altyapı; hiçbir ECommerce kavramı |
 | `ECommerce/client` | Angular 22 SPA (`core/`, `features/`, `shared/`) | Kullanıcı arayüzü; API'ye `proxy.conf.json` ile bağlanır |
+| `tools/Uludag.Generator` | Geliştirici aracı `uludag-gen` (global .NET tool): Domain entity'sinden CRUD dilimini üretir (spec 0005). Deploy edilmez; hiçbir projeye referans vermez, hiçbir proje ona referans vermez — Domain'i kaynak koddan okur | CRUD şablonları (Product/Order kalıbı) |
 
 Feature sahipliği (Application içinde): **Auth** → User, OperationClaim, UserOperationClaim,
 OtpAuthenticator, RefreshToken · **Product** → Product · **Order** → Order (kalemleriyle aggregate) ·

@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    uludag-gen: Domain'deki bir entity için CQRS temel CRUD dilimini (spec 0005) üreten geliştirici aracı.
+    Global .NET tool olarak kurulur (install.sh). Çalışma zamanında hiçbir ECommerce.* / Uludag.Core
+    projesine referans vermez: entity'leri kaynak koddan (Roslyn) okur, çözümün derlenmesini beklemez.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Uludag.Generator</RootNamespace>
+
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>uludag-gen</ToolCommandName>
+    <PackageId>Uludag.Generator</PackageId>
+    <Version>1.0.0</Version>
+    <Description>Uludağ Enerji ECommerce için CQRS CRUD dilimi üreticisi.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Uludag.Generator.Tests" />
+  </ItemGroup>
+
+</Project>
