@@ -4,6 +4,8 @@ import { ProblemDetails } from '../models/api.models';
 // Backend'in ProblemDetails.detail alanında döndürdüğü kural kodları -> kullanıcıya gösterilecek metin.
 const MESSAGES: Record<string, string> = {
   UserEmailAlreadyExists: 'Bu e-posta adresiyle zaten bir hesap var.',
+  InvalidEmail: 'Geçerli bir e-posta adresi girin.',
+  PasswordRequired: 'Şifre boş olamaz.',
   InvalidEmailOrPassword: 'E-posta veya şifre hatalı.',
   UserNotFound: 'Kullanıcı bulunamadı.',
   OperationClaimNotFound: 'Böyle bir yetki tanımlı değil.',

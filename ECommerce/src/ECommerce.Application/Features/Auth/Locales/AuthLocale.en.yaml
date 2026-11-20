@@ -1,4 +1,6 @@
 UserEmailAlreadyExists: "A user with this email already exists."
+InvalidEmail: "Enter a valid email address."
+PasswordRequired: "Password is required."
 InvalidEmailOrPassword: "Invalid email or password."
 UserNotFound: "User not found."
 OperationClaimNotFound: "Operation claim not found."

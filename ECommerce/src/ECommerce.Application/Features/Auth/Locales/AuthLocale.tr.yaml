@@ -1,4 +1,6 @@
 UserEmailAlreadyExists: "Bu e-posta adresi ile kayıtlı bir kullanıcı zaten var."
+InvalidEmail: "Geçerli bir e-posta adresi girin."
+PasswordRequired: "Şifre boş olamaz."
 InvalidEmailOrPassword: "E-posta veya şifre hatalı."
 UserNotFound: "Kullanıcı bulunamadı."
 OperationClaimNotFound: "Yetki (operation claim) bulunamadı."
