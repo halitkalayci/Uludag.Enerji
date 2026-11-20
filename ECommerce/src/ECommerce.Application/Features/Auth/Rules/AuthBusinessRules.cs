@@ -2,6 +2,7 @@ using ECommerce.Application.Exceptions;
 using ECommerce.Application.Features.Auth.Constants;
 using ECommerce.Application.Services.Repositories;
 using System.Diagnostics.CodeAnalysis;
+using System.Net.Mail;
 using System.Security.Authentication;
 using Uludag.Core.Security.Hashing;
 using Uludag.Core.Security.JWT;
@@ -60,6 +61,30 @@ namespace ECommerce.Application.Features.Auth.Rules
         {
             if (await userOperationClaimRepository.AnyAsync(userId, operationClaimId, cancellationToken))
                 throw new BusinessException(AuthConstants.UserAlreadyHasOperationClaim);
+        }
+
+        // RFC 5321: bir e-posta adresi en fazla 320 karakterdir (Users.Email kolonu da bu uzunluktadır).
+        private const int EmailMaxLength = 320;
+
+        // Kayıt girdisi (validasyon): e-posta dolu, en fazla 320 karakter, boşluksuz ve geçerli bir adres olmalı.
+        // MailAddress "Ad <a@b.com>" gibi biçimleri de kabul eder; adresin girdinin kendisi olması ayrıca istenir.
+        public void EmailShouldBeValid(string email)
+        {
+            bool isValid = !string.IsNullOrWhiteSpace(email)
+                && email.Length <= EmailMaxLength
+                && !email.Any(char.IsWhiteSpace)
+                && MailAddress.TryCreate(email, out MailAddress? address)
+                && address.Address == email;
+
+            if (!isValid)
+                throw new BusinessException(AuthConstants.InvalidEmail);
+        }
+
+        // Kayıt girdisi (validasyon): şifre boş ya da yalnızca boşluk olamaz.
+        public void PasswordShouldNotBeEmpty(string password)
+        {
+            if (string.IsNullOrWhiteSpace(password))
+                throw new BusinessException(AuthConstants.PasswordRequired);
         }
 
         // Aynı e-posta ile ikinci bir kullanıcı kaydedilemez. -> Sisteme (DB'ye) bakmak gerekiyor, iş kuralı.
@@ -143,10 +168,20 @@ namespace ECommerce.Application.Features.Auth.Rules
         }
 
         // Kod, authenticator uygulamasının şu an ürettiği kodla eşleşmeli -> değilse 400.
-        public void AuthenticatorCodeShouldBeValid(byte[] secretKey, string authenticatorCode)
+        // Geçerliyse kodun eşleştiği zaman adımını döner (tekrar kullanım kontrolü için).
+        public long AuthenticatorCodeShouldBeValid(byte[] secretKey, string authenticatorCode)
         {
-            if (!otpAuthenticatorHelper.VerifyCode(secretKey, authenticatorCode))
+            if (!otpAuthenticatorHelper.TryVerifyCode(secretKey, authenticatorCode, out long timeStep))
                 throw new BusinessException(AuthConstants.InvalidAuthenticatorCode);
+            return timeStep;
+        }
+
+        // Başarıyla kullanılmış bir kod (ya da daha eski bir adımın kodu) ikinci kez kabul edilmez (RFC 6238 §5.2).
+        // Kontrol ve kayıt tek atomik adımdır: eşzamanlı iki istekten yalnızca biri geçer.
+        public async Task AuthenticatorCodeShouldNotBeReused(Guid userId, long timeStep, CancellationToken cancellationToken = default)
+        {
+            if (!await otpAuthenticatorRepository.TryUseTimeStepAsync(userId, timeStep, cancellationToken))
+                throw new BusinessException(AuthConstants.AuthenticatorCodeAlreadyUsed);
         }
 
         // ---- Refresh Token ----

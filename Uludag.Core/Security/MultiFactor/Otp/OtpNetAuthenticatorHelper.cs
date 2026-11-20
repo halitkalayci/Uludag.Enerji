@@ -36,8 +36,12 @@ namespace Uludag.Core.Security.MultiFactor.Otp
                 OtpHashMode.Sha1, CodeLength, StepSeconds).ToString();
         }
 
-        public bool VerifyCode(byte[] secretKey, string code)
+        public bool VerifyCode(byte[] secretKey, string code) => TryVerifyCode(secretKey, code, out _);
+
+        public bool TryVerifyCode(byte[] secretKey, string code, out long timeStep)
         {
+            timeStep = 0;
+
             // Boş / yanlış uzunlukta / rakam dışı karakter içeren kod hesaplamaya bile girmez.
             if (string.IsNullOrWhiteSpace(code))
                 return false;
@@ -51,7 +55,7 @@ namespace Uludag.Core.Security.MultiFactor.Otp
             VerificationWindow window = new(previous: multiFactorOptions.VerificationWindow, future: multiFactorOptions.VerificationWindow);
 
             // Karşılaştırma OtpNet içinde sabit zamanlıdır (zamanlama saldırısına karşı).
-            return totp.VerifyTotp(normalizedCode, out _, window);
+            return totp.VerifyTotp(normalizedCode, out timeStep, window);
         }
     }
 }

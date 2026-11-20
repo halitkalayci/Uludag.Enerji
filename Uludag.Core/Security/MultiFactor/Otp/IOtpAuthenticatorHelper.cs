@@ -17,5 +17,9 @@ namespace Uludag.Core.Security.MultiFactor.Otp
 
         // Kullanıcının girdiği kod bu anahtarla, şu an (± VerificationWindow adım) için geçerli mi?
         bool VerifyCode(byte[] secretKey, string code);
+
+        // VerifyCode ile aynı kontrol; geçerliyse kodun eşleştiği zaman adımını da verir. Çağıran taraf adımı saklayıp
+        // aynı (ya da daha eski) adımın kodunu ikinci kez kabul etmez (tekrar kullanım koruması, RFC 6238 §5.2).
+        bool TryVerifyCode(byte[] secretKey, string code, out long timeStep);
     }
 }

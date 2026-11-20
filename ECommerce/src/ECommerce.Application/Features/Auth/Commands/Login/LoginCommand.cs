@@ -16,7 +16,6 @@ namespace ECommerce.Application.Features.Auth.Commands.Login
     {
         public string Email { get; set; } = null!;
         public string Password { get; set; } = null!;
-        public int Test { get; set; }
 
         public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponse>
         {
@@ -39,8 +38,6 @@ namespace ECommerce.Application.Features.Auth.Commands.Login
 
             public async Task<LoginResponse> Handle(LoginCommand request, CancellationToken cancellationToken)
             {
-                var result = 15 / request.Test;
-
                 // Veritabanı
                 Domain.Entities.User? user = await userRepository.GetByEmailAsync(request.Email, cancellationToken);
 

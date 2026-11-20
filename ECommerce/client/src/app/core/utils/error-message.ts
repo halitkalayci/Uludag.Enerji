@@ -4,6 +4,8 @@ import { ProblemDetails } from '../models/api.models';
 // Backend'in ProblemDetails.detail alanında döndürdüğü kural kodları -> kullanıcıya gösterilecek metin.
 const MESSAGES: Record<string, string> = {
   UserEmailAlreadyExists: 'Bu e-posta adresiyle zaten bir hesap var.',
+  InvalidEmail: 'Geçerli bir e-posta adresi girin.',
+  PasswordRequired: 'Şifre boş olamaz.',
   InvalidEmailOrPassword: 'E-posta veya şifre hatalı.',
   UserNotFound: 'Kullanıcı bulunamadı.',
   OperationClaimNotFound: 'Böyle bir yetki tanımlı değil.',
@@ -12,6 +14,7 @@ const MESSAGES: Record<string, string> = {
   MultiFactorAlreadyEnabled: 'İki adımlı doğrulama bu hesapta zaten etkin.',
   OtpAuthenticatorNotSetUp: 'Authenticator kurulumu bulunamadı. Lütfen kurulumu yeniden başlatın.',
   InvalidAuthenticatorCode: 'Doğrulama kodu hatalı. Uygulamadaki güncel kodu girin.',
+  AuthenticatorCodeAlreadyUsed: 'Bu doğrulama kodu zaten kullanıldı. Uygulamada yeni kodu bekleyin.',
   TooManyAuthenticatorAttempts: 'Çok fazla hatalı deneme yapıldı. Bir süre sonra tekrar deneyin.',
   InvalidRefreshToken: 'Oturumunuz geçersiz. Lütfen tekrar giriş yapın.',
   RefreshTokenExpired: 'Oturumunuzun süresi doldu. Lütfen tekrar giriş yapın.',

@@ -21,7 +21,17 @@ namespace ECommerce.IntegrationTests.Infrastructure
         private readonly MsSqlContainer sqlContainer = new MsSqlBuilder(SqlServerImage).Build();
         private readonly RedisContainer redisContainer = new RedisBuilder(RedisImage).Build();
 
+        // MFA anahtar URI'sinde görünmesi beklenen uygulama adı (spec 0002, AC-7): testin kendi verdiği değer.
+        public const string MultiFactorIssuer = "Uludag Integration Tests";
+
+        // Test sunucusunda istemci IP'si yoktur; tüm istekler tek bir rate limit kovasını paylaşır.
+        // Rate limiting Auth testlerinin konusu değil (spec 0002, Out of scope) — kova pratikte hiç dolmaz.
+        private const int RateLimitCapacity = 1_000_000;
+
         public WebApplicationFactory<Program> Factory { get; private set; } = null!;
+
+        // Token imza anahtarı: testler süresi dolmuş/sahte token üretebilsin diye dışa açıktır (spec 0003).
+        public string TokenSecurityKey { get; } = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
 
         public string SqlConnectionString => sqlContainer.GetConnectionString();
 
@@ -38,7 +48,9 @@ namespace ECommerce.IntegrationTests.Infrastructure
                 builder.UseEnvironment("Testing");
                 builder.UseSetting("ConnectionStrings:ECommerce", SqlConnectionString);
                 builder.UseSetting("RedisOptions:ConnectionString", RedisConnectionString);
-                builder.UseSetting("TokenOptions:SecurityKey", Convert.ToBase64String(RandomNumberGenerator.GetBytes(64)));
+                builder.UseSetting("TokenOptions:SecurityKey", TokenSecurityKey);
+                builder.UseSetting("MultiFactorOptions:Issuer", MultiFactorIssuer);
+                builder.UseSetting("RateLimitOptions:Capacity", RateLimitCapacity.ToString(System.Globalization.CultureInfo.InvariantCulture));
             });
 
             await using AsyncServiceScope scope = Factory.Services.CreateAsyncScope();
