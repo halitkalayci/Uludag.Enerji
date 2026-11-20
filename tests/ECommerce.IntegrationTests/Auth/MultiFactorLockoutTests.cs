@@ -35,6 +35,29 @@ namespace ECommerce.IntegrationTests.Auth
         }
 
         // Kilidin süresi beklenmeden ölçülür (spec Constraints; plan R-2): kullanıcının kilit kaydının kalan ömrü.
+        // Girişin kendisi bu testin konusu: ikinci MFA oturumu gerçek HTTP girişiyle (yalnızca e-posta + şifre) açılır.
+        // Giriş sayacı sıfırlasaydı her girişte 5 yeni deneme hakkı doğar, BR-9 delinirdi.
+        [Fact]
+        public async Task Verify_AttemptsAfterNewLogin_NotReset()
+        {
+            string email = AuthArrange.NewEmail();
+            Guid userId = await arrange.CreateUserAsync(email);
+            string firstSession = await arrange.OpenMfaSessionAsync(userId);
+            using HttpClient client = arrange.CreateClient();
+            string secret = await arrange.SetupMfaAsync(client, firstSession);
+            await FailAttemptsAsync(client, firstSession, secret, 3);
+
+            HttpResponseMessage login = await AuthArrange.LoginAsync(client, email, AuthArrange.Password);
+            Assert.Equal(HttpStatusCode.OK, login.StatusCode);
+            string secondSession = (await AuthArrange.ReadJsonAsync<LoginResult>(login)).MultiFactorToken!;
+            await FailAttemptsAsync(client, secondSession, secret, 2);
+
+            HttpResponseMessage sixth = await AuthArrange.VerifyAsync(client, secondSession, AuthArrange.CurrentCode(secret));
+
+            await ProblemAssert.IsProblemAsync(sixth, HttpStatusCode.BadRequest);
+            Assert.DoesNotContain("accessToken", await sixth.Content.ReadAsStringAsync(TestContext.Current.CancellationToken), StringComparison.OrdinalIgnoreCase);
+        }
+
         // BR-9: kilit limit AŞILINCA başlar ve 15 dk sürer. Hatalı denemeler zamana yayılmış olabilir: ilk denemeden
         // sonra "13 dk geçmiş" gibi davranılır (deneme kaydının kalan ömrü Redis'te 2 dk'ya indirilir — plan A-1, R-2).
         // Kilit ilk denemeden başlıyorsa bu noktada ~2 dk kalır; doğru uygulamada aşıldığı andan itibaren ~15 dk.
