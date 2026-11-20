@@ -12,9 +12,9 @@ namespace Uludag.Generator.Tests
         private static (TestRepo Repo, CrudModel Model) Setup()
         {
             var repo = TestRepo.Create();
-            repo.AddEntity("Category", Fixtures.Category);
+            repo.AddEntity("Topic", Fixtures.Topic);
             DomainModel domain = EntityReader.Read(repo.Layout);
-            return (repo, new CrudModel(domain.FindEntity("Category")!, "Categories", domain.Enums));
+            return (repo, new CrudModel(domain.FindEntity("Topic")!, "Topics", domain.Enums));
         }
 
         private static void Apply(RegistrationOutcome outcome)
@@ -33,17 +33,17 @@ namespace Uludag.Generator.Tests
                 Apply(outcome);
 
                 Assert.Null(outcome.Error);
-                Assert.Contains("        public DbSet<Category> Categories => Set<Category>();", File.ReadAllText(repo.Layout.DbContextFile));
-                Assert.Contains("            services.AddScoped<ICategoryRepository, CategoryRepository>();", File.ReadAllText(repo.Layout.PersistenceRegistrationFile));
+                Assert.Contains("        public DbSet<Topic> Topics => Set<Topic>();", File.ReadAllText(repo.Layout.DbContextFile));
+                Assert.Contains("            services.AddScoped<ITopicRepository, TopicRepository>();", File.ReadAllText(repo.Layout.PersistenceRegistrationFile));
 
                 string seeds = File.ReadAllText(repo.Layout.OperationClaimSeedsFile);
-                Assert.Contains("using ECommerce.Application.Features.Category.Constants;", seeds);
-                var ids = Regex.Matches(seeds, @"Guid\.Parse\(""([0-9a-f-]{36})""\), Name = CategoryOperationClaims\.(\w+) \}")
+                Assert.Contains("using ECommerce.Application.Features.Topic.Constants;", seeds);
+                var ids = Regex.Matches(seeds, @"Guid\.Parse\(""([0-9a-f-]{36})""\), Name = TopicOperationClaims\.(\w+) \}")
                     .Select(m => (Id: m.Groups[1].Value, Action: m.Groups[2].Value)).ToList();
                 Assert.Equal(["Admin", "Write", "Read", "Create", "Update", "Delete"], ids.Select(x => x.Action));
                 Assert.Equal(6, ids.Select(x => x.Id).Distinct().Count());
                 // Yeni claim'ler dizinin içinde, kapanıştan önce.
-                Assert.True(seeds.IndexOf("CategoryOperationClaims.Delete", StringComparison.Ordinal) < seeds.LastIndexOf("];", StringComparison.Ordinal));
+                Assert.True(seeds.IndexOf("TopicOperationClaims.Delete", StringComparison.Ordinal) < seeds.LastIndexOf("];", StringComparison.Ordinal));
             }
         }
 
@@ -81,7 +81,7 @@ namespace Uludag.Generator.Tests
                 string text = Encoding.UTF8.GetString(bytes);
                 Assert.Equal([0xEF, 0xBB, 0xBF], bytes[..3]);
                 Assert.DoesNotMatch("[^\r]\n", text);
-                Assert.Contains("public DbSet<Category> Categories => Set<Category>();\r\n", text);
+                Assert.Contains("public DbSet<Topic> Topics => Set<Topic>();\r\n", text);
             }
         }
 
