@@ -1,6 +1,6 @@
 # Spec 0006 — Worktree zorunluluğu ve merge sonrası temizlik (mini)
 
-- Status: In progress
+- Status: Shipped
 - Mode: lite
 - Plan: `specs/plans/0006-plan.md`
 - Self-critique: done
@@ -40,38 +40,38 @@ insanındır), mevcut worktree'leri yeniden adlandırmak.
   SHIP adımı temizliği adım olarak içerir (tek doğruluk kaynağı ilkesi).
 
 ## Changed behavior
-- [ ] CB-1 — Repoyu değiştiren her oturum (K-1), paralel oturum olmasa bile, işe kendi worktree'sinde
+- [x] CB-1 — Repoyu değiştiren her oturum (K-1), paralel oturum olmasa bile, işe kendi worktree'sinde
   başlar: yeni iş için güncel `origin/main`'den yeni branch + worktree; sürdürülen iş için o branch'in
   mevcut worktree'si (yoksa yenisi). Ana çalışma ağacında dosya düzenlenmez, commit atılmaz, branch
   değiştirilmez.
-- [ ] CB-2 — Claude Code'da bir ajan (a) dosya düzenleme araçlarıyla (Edit, Write, NotebookEdit) ana
+- [x] CB-2 — Claude Code'da bir ajan (a) dosya düzenleme araçlarıyla (Edit, Write, NotebookEdit) ana
   çalışma ağacındaki bir dosyaya yazmaya, ya da (b) ana çalışma ağacında branch/index/commit
   değiştiren bir git komutu (`checkout`, `switch`, `commit`, `merge`, `pull`, `stash`, `reset`,
   `restore`, `add`) çalıştırmaya kalkarsa işlem engellenir ve mesaj worktree açmayı söyler. Aynı
   işlemler bir worktree içinde engellenmez; ana ağaçta `fetch`, `worktree add`, okuma komutları
   serbesttir. Genel shell yazmaları (`sed -i`, `>`) teknik olarak yakalanmaz — belgelenmiş sınır,
   kuralın metni yine geçerlidir.
-- [ ] CB-3 — Yeni açılan worktree'nin dizin adı K-3 kuralına uyar; branch upstream'i `origin/main`'e
+- [x] CB-3 — Yeni açılan worktree'nin dizin adı K-3 kuralına uyar; branch upstream'i `origin/main`'e
   bağlı kalmaz (yanlışlıkla main'e push riski olmaz).
-- [ ] CB-4 — Merge durumu yalnız K-2 kanıtıyla kabul edilir. Kullanıcı "merge ettim" dese de kanıt
+- [x] CB-4 — Merge durumu yalnız K-2 kanıtıyla kabul edilir. Kullanıcı "merge ettim" dese de kanıt
   yoksa branch merge edilmemiş sayılır, temizlik yapılmaz ve hangi kontrolün başarısız olduğu
   raporlanır.
-- [ ] CB-5 — Merge doğrulandığında: worktree dizini diskten silinir, `git worktree list`'te kaydı
+- [x] CB-5 — Merge doğrulandığında: worktree dizini diskten silinir, `git worktree list`'te kaydı
   kalmaz, local branch ve remote branch silinir (remote zaten silinmişse hata değildir), bayat
   remote-tracking ref'ler budanır. Temizlik sonunda bu dört kalıntının yokluğu kanıt olarak
   raporlanır. Bir adım başarısız olursa (ör. Windows'ta dizin başka bir süreç tarafından
   kullanılıyor) hata gizlenmez: kalan kalıntı adıyla raporlanır, sonraki tarama yeniden dener.
-- [ ] CB-6 — Merge doğrulanmış olsa bile worktree'de commit edilmemiş değişiklik, izlenmeyen
+- [x] CB-6 — Merge doğrulanmış olsa bile worktree'de commit edilmemiş değişiklik, izlenmeyen
   (ignore edilmemiş) dosya ya da push edilmemiş commit varsa hiçbir şey silinmez; durum raporlanır
   ve karar insana bırakılır.
 
 ## Preserved behavior
-- [ ] PB-1 — `docs/git.md`'deki branch adlandırma, commit, PR ve squash-merge kuralları ile "merge'ü
+- [x] PB-1 — `docs/git.md`'deki branch adlandırma, commit, PR ve squash-merge kuralları ile "merge'ü
   insan yapar" ilkesi değişmez; hiçbir oturum PR merge etmez.
-- [ ] PB-2 — Merge'ü K-2 ile doğrulanmamış hiçbir worktree, branch ya da dizin silinmez; mevcut
+- [x] PB-2 — Merge'ü K-2 ile doğrulanmamış hiçbir worktree, branch ya da dizin silinmez; mevcut
   `Uludag.Enerji-auth`, `Uludag.Enerji-client` worktree'leri ve diğer oturumların branch'leri
   dokunulmadan kalır.
-- [ ] PB-3 — `scripts/check` ve `scripts/doctor --strict` yeşil kalır; `protect-shipped` hook'u
+- [x] PB-3 — `scripts/check` ve `scripts/doctor --strict` yeşil kalır; `protect-shipped` hook'u
   `specs/done/` düzenlemelerini engellemeye devam eder.
 
 ## Out of scope
@@ -87,7 +87,7 @@ insanındır), mevcut worktree'leri yeniden adlandırmak.
 - CI tarafında worktree denetimi (worktree yereldir; CI'da anlamı yok).
 
 ## Definition of Done
-- [ ] `scripts/check` green
-- [ ] Independent review done; real findings fixed, noise rejected with written rationale, deferred ones in `specs/backlog.md`
-- [ ] Criterion ↔ evidence table complete for CB-* **and** PB-* (UI: before/after screenshots, agent-captured, judged at SHIP)
-- [ ] Spec moved to `specs/done/` (immutable there)
+- [x] `scripts/check` green — fast yerelde; full PR'ın CI koşusunda (yerel full insan kararıyla atlandı, plan `## Build evidence`)
+- [ ] Independent review done — **atlandı**, insan kararı 2026-11-20 (plan `## Triage`)
+- [x] Criterion ↔ evidence table complete for CB-* **and** PB-* — builder tablosu, bağımsız değil (plan `## Triage`)
+- [x] Spec moved to `specs/done/` (immutable there)
