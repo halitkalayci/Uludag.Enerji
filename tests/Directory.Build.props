@@ -14,6 +14,12 @@
     <IsTestProject>true</IsTestProject>
     <!-- xUnit v3 test projeleri kendi başına çalışabilen birer uygulamadır. -->
     <OutputType>Exe</OutputType>
+    <!--
+      xUnit v3 4.x projeyi varsayılan olarak Microsoft.Testing.Platform uygulaması işaretler; .NET 10 SDK bu
+      durumda VSTest üzerinden 'dotnet test'i reddeder. check.conf'taki dotnet test filtresi hem yereldeki
+      SDK 10'da hem CI'daki SDK 9'da aynı çalışsın diye VSTest adaptörü (xunit.runner.visualstudio) kullanılır.
+    -->
+    <IsTestingPlatformApplication>false</IsTestingPlatformApplication>
   </PropertyGroup>
 
   <ItemGroup>
