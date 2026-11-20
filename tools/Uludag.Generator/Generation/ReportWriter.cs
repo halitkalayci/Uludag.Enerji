@@ -15,7 +15,7 @@ namespace Uludag.Generator.Generation
             error.WriteLine(dryRun
                 ? "Üzerine yazmak için --force kullanın."
                 : "Üzerine yazmak için --force, tam önizleme için --dry-run kullanın.");
-            // Çıktıyı okuyan bir AI ajanı elle yazılmış dosyaları (ör. Auth repository'leri) ezmesin (review L-2, B-22).
+            // Çıktıyı okuyan bir AI ajanı elle yazılmış dosyaları (ör. Auth repository'leri) ezmesin (review L-2, B-24).
             error.WriteLine("Uyarı: bu dosyalar elle yazılmış olabilir (ör. var olan bir feature ya da Auth repository'leri). --force yalnızca");
             error.WriteLine("uludag-gen'in ürettiği dosyaların üzerine yazmak içindir; var olan feature yeniden üretilmez (docs/conventions.md, Code generation).");
         }
