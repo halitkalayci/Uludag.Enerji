@@ -6,46 +6,46 @@ namespace Uludag.Generator.Tests
     // AC-2 (dosyalar), AC-6 (özellik eşleme), AC-7 (çakışma/force), AC-8 (hatalı girdi, dry-run).
     public class CrudGeneratorTests
     {
-        public static readonly string[] CategoryFiles =
+        public static readonly string[] TopicFiles =
         [
-            "ECommerce/src/ECommerce.Application/Features/Category/Commands/Create/CreateCategoryCommand.cs",
-            "ECommerce/src/ECommerce.Application/Features/Category/Commands/Update/UpdateCategoryCommand.cs",
-            "ECommerce/src/ECommerce.Application/Features/Category/Commands/Delete/DeleteCategoryCommand.cs",
-            "ECommerce/src/ECommerce.Application/Features/Category/Queries/GetAll/GetAllCategoryQuery.cs",
-            "ECommerce/src/ECommerce.Application/Features/Category/Queries/GetById/GetByIdCategoryQuery.cs",
-            "ECommerce/src/ECommerce.Application/Features/Category/Queries/CategoryResponse.cs",
-            "ECommerce/src/ECommerce.Application/Features/Category/Rules/CategoryBusinessRules.cs",
-            "ECommerce/src/ECommerce.Application/Features/Category/Mappers/CategoryMapper.cs",
-            "ECommerce/src/ECommerce.Application/Features/Category/Constants/CategoryOperationClaims.cs",
-            "ECommerce/src/ECommerce.Application/Features/Category/Constants/CategoryConstants.cs",
-            "ECommerce/src/ECommerce.Application/Features/Category/Locales/CategoryLocale.tr.yaml",
-            "ECommerce/src/ECommerce.Application/Features/Category/Locales/CategoryLocale.en.yaml",
-            "ECommerce/src/ECommerce.Application/Services/Repositories/ICategoryRepository.cs",
-            "ECommerce/src/ECommerce.Persistence/Repositories/CategoryRepository.cs",
-            "ECommerce/src/ECommerce.Persistence/Configurations/CategoryConfiguration.cs",
-            "ECommerce/src/ECommerce.WebAPI/Controllers/CategoriesController.cs",
+            "ECommerce/src/ECommerce.Application/Features/Topic/Commands/Create/CreateTopicCommand.cs",
+            "ECommerce/src/ECommerce.Application/Features/Topic/Commands/Update/UpdateTopicCommand.cs",
+            "ECommerce/src/ECommerce.Application/Features/Topic/Commands/Delete/DeleteTopicCommand.cs",
+            "ECommerce/src/ECommerce.Application/Features/Topic/Queries/GetAll/GetAllTopicQuery.cs",
+            "ECommerce/src/ECommerce.Application/Features/Topic/Queries/GetById/GetByIdTopicQuery.cs",
+            "ECommerce/src/ECommerce.Application/Features/Topic/Queries/TopicResponse.cs",
+            "ECommerce/src/ECommerce.Application/Features/Topic/Rules/TopicBusinessRules.cs",
+            "ECommerce/src/ECommerce.Application/Features/Topic/Mappers/TopicMapper.cs",
+            "ECommerce/src/ECommerce.Application/Features/Topic/Constants/TopicOperationClaims.cs",
+            "ECommerce/src/ECommerce.Application/Features/Topic/Constants/TopicConstants.cs",
+            "ECommerce/src/ECommerce.Application/Features/Topic/Locales/TopicLocale.tr.yaml",
+            "ECommerce/src/ECommerce.Application/Features/Topic/Locales/TopicLocale.en.yaml",
+            "ECommerce/src/ECommerce.Application/Services/Repositories/ITopicRepository.cs",
+            "ECommerce/src/ECommerce.Persistence/Repositories/TopicRepository.cs",
+            "ECommerce/src/ECommerce.Persistence/Configurations/TopicConfiguration.cs",
+            "ECommerce/src/ECommerce.WebAPI/Controllers/TopicsController.cs",
         ];
 
-        private static TestRepo CategoryRepo()
+        private static TestRepo TopicRepo()
         {
             var repo = TestRepo.Create();
-            repo.AddEntity("Category", Fixtures.Category);
+            repo.AddEntity("Topic", Fixtures.Topic);
             return repo;
         }
 
         [Fact]
         public void Crud_FixtureEntity_Writes16FilesAnd3Registrations()
         {
-            using var repo = CategoryRepo();
+            using var repo = TopicRepo();
             var before = repo.Snapshot();
 
-            RunResult result = Run(repo, "crud", "Category");
+            RunResult result = Run(repo, "crud", "Topic");
 
             Assert.Equal(ExitCodes.Success, result.ExitCode);
             var after = repo.Snapshot();
             var added = after.Keys.Except(before.Keys).Order().ToList();
-            Assert.Equal(CategoryFiles.Order(), added);
-            foreach (string file in CategoryFiles)
+            Assert.Equal(TopicFiles.Order(), added);
+            foreach (string file in TopicFiles)
                 Assert.Contains($"+ {file}", result.Output);
 
             var changed = before.Keys.Where(k => before[k] != after[k]).Order().ToList();
@@ -58,18 +58,18 @@ namespace Uludag.Generator.Tests
                 changed);
             Assert.Contains("Değiştirildi (3):", result.Output);
             Assert.Contains("ZORUNLU — migration", result.Output);
-            Assert.Contains("dotnet ef migrations add add_category", result.Output);
+            Assert.Contains("dotnet ef migrations add add_topic", result.Output);
         }
 
         [Fact]
         public void Map_Id_NotInCreate_RouteFieldInUpdate()
         {
-            using var repo = CategoryRepo();
-            Run(repo, "crud", "Category");
+            using var repo = TopicRepo();
+            Run(repo, "crud", "Topic");
 
-            var create = Properties(FeatureFile(repo, "Category", "Commands/Create/CreateCategoryCommand.cs"), "CreateCategoryCommand");
-            var update = Properties(FeatureFile(repo, "Category", "Commands/Update/UpdateCategoryCommand.cs"), "UpdateCategoryCommand");
-            var response = Properties(FeatureFile(repo, "Category", "Queries/CategoryResponse.cs"), "CategoryResponse");
+            var create = Properties(FeatureFile(repo, "Topic", "Commands/Create/CreateTopicCommand.cs"), "CreateTopicCommand");
+            var update = Properties(FeatureFile(repo, "Topic", "Commands/Update/UpdateTopicCommand.cs"), "UpdateTopicCommand");
+            var response = Properties(FeatureFile(repo, "Topic", "Queries/TopicResponse.cs"), "TopicResponse");
 
             Assert.DoesNotContain("Id", create.Keys);
             Assert.Equal("Guid", update["Id"]);
@@ -79,17 +79,17 @@ namespace Uludag.Generator.Tests
         [Fact]
         public void Map_SingleMoney_FlattenedToAmountAndCurrency()
         {
-            using var repo = CategoryRepo();
-            Run(repo, "crud", "Category");
+            using var repo = TopicRepo();
+            Run(repo, "crud", "Topic");
 
-            var create = Properties(FeatureFile(repo, "Category", "Commands/Create/CreateCategoryCommand.cs"), "CreateCategoryCommand");
-            string mapper = File.ReadAllText(FeatureFile(repo, "Category", "Mappers/CategoryMapper.cs"));
+            var create = Properties(FeatureFile(repo, "Topic", "Commands/Create/CreateTopicCommand.cs"), "CreateTopicCommand");
+            string mapper = File.ReadAllText(FeatureFile(repo, "Topic", "Mappers/TopicMapper.cs"));
 
             Assert.Equal("decimal", create["Amount"]);
             Assert.Equal("string", create["Currency"]);
             Assert.DoesNotContain("MinimumPrice", create.Keys);
             Assert.Contains("MinimumPrice = new Domain.ValueObjects.Money(command.Amount, command.Currency)", mapper);
-            Assert.Contains("Amount = category.MinimumPrice.Amount", mapper);
+            Assert.Contains("Amount = topic.MinimumPrice.Amount", mapper);
         }
 
         [Fact]
@@ -163,11 +163,11 @@ namespace Uludag.Generator.Tests
         [Fact]
         public void Map_NavigationAndCollection_SkippedAndReported()
         {
-            using var repo = CategoryRepo();
+            using var repo = TopicRepo();
 
-            RunResult result = Run(repo, "crud", "Category");
+            RunResult result = Run(repo, "crud", "Topic");
 
-            var response = Properties(FeatureFile(repo, "Category", "Queries/CategoryResponse.cs"), "CategoryResponse");
+            var response = Properties(FeatureFile(repo, "Topic", "Queries/TopicResponse.cs"), "TopicResponse");
             Assert.DoesNotContain("User", response.Keys);
             Assert.DoesNotContain("Products", response.Keys);
             Assert.DoesNotContain("Image", response.Keys);
@@ -179,28 +179,28 @@ namespace Uludag.Generator.Tests
         [Fact]
         public void Map_ForeignKeyNullableAndEnum_Kept()
         {
-            using var repo = CategoryRepo();
-            Run(repo, "crud", "Category");
+            using var repo = TopicRepo();
+            Run(repo, "crud", "Topic");
 
-            var create = Properties(FeatureFile(repo, "Category", "Commands/Create/CreateCategoryCommand.cs"), "CreateCategoryCommand");
+            var create = Properties(FeatureFile(repo, "Topic", "Commands/Create/CreateTopicCommand.cs"), "CreateTopicCommand");
 
-            Assert.Equal("Guid?", create["ParentCategoryId"]);
+            Assert.Equal("Guid?", create["ParentTopicId"]);
             Assert.Equal("string?", create["Description"]);
             Assert.Equal("DateTime?", create["PublishedAt"]);
-            Assert.Equal("CategoryStatus", create["Status"]);
+            Assert.Equal("TopicStatus", create["Status"]);
             Assert.Equal("string", create["Name"]);
         }
 
         [Fact]
         public void Map_UserId_NotInCommands_InResponse_Warned()
         {
-            using var repo = CategoryRepo();
+            using var repo = TopicRepo();
 
-            RunResult result = Run(repo, "crud", "Category");
+            RunResult result = Run(repo, "crud", "Topic");
 
-            var create = Properties(FeatureFile(repo, "Category", "Commands/Create/CreateCategoryCommand.cs"), "CreateCategoryCommand");
-            var update = Properties(FeatureFile(repo, "Category", "Commands/Update/UpdateCategoryCommand.cs"), "UpdateCategoryCommand");
-            var response = Properties(FeatureFile(repo, "Category", "Queries/CategoryResponse.cs"), "CategoryResponse");
+            var create = Properties(FeatureFile(repo, "Topic", "Commands/Create/CreateTopicCommand.cs"), "CreateTopicCommand");
+            var update = Properties(FeatureFile(repo, "Topic", "Commands/Update/UpdateTopicCommand.cs"), "UpdateTopicCommand");
+            var response = Properties(FeatureFile(repo, "Topic", "Queries/TopicResponse.cs"), "TopicResponse");
             Assert.DoesNotContain("UserId", create.Keys);
             Assert.DoesNotContain("UserId", update.Keys);
             Assert.Equal("Guid", response["UserId"]);
@@ -225,12 +225,12 @@ namespace Uludag.Generator.Tests
         [Fact]
         public void Crud_PluralOverride_UsedForControllerAndDbSet()
         {
-            using var repo = CategoryRepo();
+            using var repo = TopicRepo();
 
-            Run(repo, "crud", "Category", "--plural", "CategoryList");
+            Run(repo, "crud", "Topic", "--plural", "TopicList");
 
-            Assert.True(File.Exists(Path.Combine(repo.Layout.WebApiDir, "Controllers", "CategoryListController.cs")));
-            Assert.Contains("uludagDbContext.CategoryList", File.ReadAllText(Path.Combine(repo.Layout.PersistenceDir, "Repositories", "CategoryRepository.cs")));
+            Assert.True(File.Exists(Path.Combine(repo.Layout.WebApiDir, "Controllers", "TopicListController.cs")));
+            Assert.Contains("uludagDbContext.TopicList", File.ReadAllText(Path.Combine(repo.Layout.PersistenceDir, "Repositories", "TopicRepository.cs")));
         }
 
         [Theory]
@@ -254,16 +254,16 @@ namespace Uludag.Generator.Tests
         [Fact]
         public void Crud_ExistingFile_WritesNothingExit2()
         {
-            using var repo = CategoryRepo();
-            string existing = repo.Full(CategoryFiles[5]); // CategoryResponse.cs elle yazılmış olsun
+            using var repo = TopicRepo();
+            string existing = repo.Full(TopicFiles[5]); // TopicResponse.cs elle yazılmış olsun
             repo.Write(existing, "// elle yazıldı\n");
             var before = repo.Snapshot();
 
-            RunResult result = Run(repo, "crud", "Category");
+            RunResult result = Run(repo, "crud", "Topic");
 
             Assert.Equal(ExitCodes.Conflict, result.ExitCode);
             Assert.Equal(before, repo.Snapshot()); // ne yeni dosya ne kayıt eklemesi
-            Assert.Contains($"= {CategoryFiles[5]}", result.Error);
+            Assert.Contains($"= {TopicFiles[5]}", result.Error);
             Assert.Contains("--force", result.Error);
             Assert.Contains("--force yalnızca", result.Error);
             Assert.Contains("uludag-gen'in ürettiği dosyaların üzerine yazmak içindir", result.Error);
@@ -272,28 +272,28 @@ namespace Uludag.Generator.Tests
         [Fact]
         public void Crud_ExistingFile_Force_Overwrites()
         {
-            using var repo = CategoryRepo();
-            string existing = repo.Full(CategoryFiles[5]);
+            using var repo = TopicRepo();
+            string existing = repo.Full(TopicFiles[5]);
             repo.Write(existing, "// elle yazıldı\n");
 
-            RunResult result = Run(repo, "crud", "Category", "--force");
+            RunResult result = Run(repo, "crud", "Topic", "--force");
 
             Assert.Equal(ExitCodes.Success, result.ExitCode);
-            Assert.Contains("public class CategoryResponse", File.ReadAllText(existing));
-            Assert.Contains($"! {CategoryFiles[5]}", result.Output);
-            foreach (string file in CategoryFiles)
+            Assert.Contains("public class TopicResponse", File.ReadAllText(existing));
+            Assert.Contains($"! {TopicFiles[5]}", result.Output);
+            foreach (string file in TopicFiles)
                 Assert.True(File.Exists(repo.Full(file)), file);
         }
 
         [Fact]
         public void Crud_SecondRunWithForce_DoesNotDuplicateRegistrations()
         {
-            using var repo = CategoryRepo();
-            Assert.Equal(ExitCodes.Success, Run(repo, "crud", "Category").ExitCode);
+            using var repo = TopicRepo();
+            Assert.Equal(ExitCodes.Success, Run(repo, "crud", "Topic").ExitCode);
             string seedsAfterFirst = File.ReadAllText(repo.Layout.OperationClaimSeedsFile);
 
-            Assert.Equal(ExitCodes.Conflict, Run(repo, "crud", "Category").ExitCode);
-            RunResult second = Run(repo, "crud", "Category", "--force");
+            Assert.Equal(ExitCodes.Conflict, Run(repo, "crud", "Topic").ExitCode);
+            RunResult second = Run(repo, "crud", "Topic", "--force");
 
             Assert.Equal(ExitCodes.Success, second.ExitCode);
             Assert.Contains("Zaten kayıtlı (atlandı):", second.Output);
@@ -305,10 +305,10 @@ namespace Uludag.Generator.Tests
         public void Crud_MissingRegistrationFile_FailsAndWritesNothing()
         {
             using var repo = TestRepo.Create(withRegistrationFiles: false);
-            repo.AddEntity("Category", Fixtures.Category);
+            repo.AddEntity("Topic", Fixtures.Topic);
             var before = repo.Snapshot();
 
-            RunResult result = Run(repo, "crud", "Category");
+            RunResult result = Run(repo, "crud", "Topic");
 
             Assert.Equal(ExitCodes.UserError, result.ExitCode);
             Assert.Contains("kayıt dosyası bulunamadı", result.Error);
@@ -318,37 +318,37 @@ namespace Uludag.Generator.Tests
         [Fact]
         public void Crud_DryRun_WithConflict_ListsPlanAndTouchesNothing()
         {
-            using var repo = CategoryRepo();
-            repo.Write(repo.Full(CategoryFiles[5]), "// elle yazıldı\n");
+            using var repo = TopicRepo();
+            repo.Write(repo.Full(TopicFiles[5]), "// elle yazıldı\n");
             var before = repo.Snapshot();
 
-            RunResult result = Run(repo, "crud", "Category", "--dry-run");
+            RunResult result = Run(repo, "crud", "Topic", "--dry-run");
 
             Assert.Equal(ExitCodes.Conflict, result.ExitCode);
             Assert.Equal(before, repo.Snapshot());
             Assert.Contains("Oluşturulacak (15):", result.Output);
             Assert.Contains("ÇAKIŞMA VAR: --force olmadan hiçbir dosya yazılmaz", result.Output);
             Assert.Contains("Üzerine yazılacak (yalnızca --force ile) (1):", result.Output);
-            Assert.Contains($"! {CategoryFiles[5]}", result.Output);
+            Assert.Contains($"! {TopicFiles[5]}", result.Output);
             Assert.Contains("Değiştirilecek (3):", result.Output);
-            Assert.Contains($"= {CategoryFiles[5]}", result.Error);
+            Assert.Contains($"= {TopicFiles[5]}", result.Error);
             Assert.DoesNotContain("--dry-run kullanın", result.Error); // zaten verilmiş
         }
 
         [Fact]
         public void Crud_DryRun_TouchesNothing()
         {
-            using var repo = CategoryRepo();
+            using var repo = TopicRepo();
             var before = repo.Snapshot();
 
-            RunResult result = Run(repo, "crud", "Category", "--dry-run");
+            RunResult result = Run(repo, "crud", "Topic", "--dry-run");
 
             Assert.Equal(ExitCodes.Success, result.ExitCode);
             Assert.Equal(before, repo.Snapshot());
             Assert.Contains("DRY RUN", result.Output);
             Assert.DoesNotContain("ÇAKIŞMA VAR", result.Output);
             Assert.Contains("Oluşturulacak (16):", result.Output);
-            foreach (string file in CategoryFiles)
+            foreach (string file in TopicFiles)
                 Assert.Contains($"+ {file}", result.Output);
         }
     }

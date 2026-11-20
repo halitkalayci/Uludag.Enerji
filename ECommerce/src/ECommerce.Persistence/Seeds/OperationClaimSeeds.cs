@@ -1,3 +1,4 @@
+using ECommerce.Application.Features.Category.Constants;
 using ECommerce.Application.Features.Order.Constants;
 using ECommerce.Application.Features.OrderItem.Constants;
 using ECommerce.Application.Features.Product.Constants;
@@ -37,6 +38,13 @@ namespace ECommerce.Persistence.Seeds
             new() { Id = Guid.Parse("fcc18799-a665-4f8e-adc2-4ae0f6a08155"), Name = OrderItemOperationClaims.Create },
             new() { Id = Guid.Parse("6e818194-6bc9-4c80-8c14-03219b616261"), Name = OrderItemOperationClaims.Update },
             new() { Id = Guid.Parse("21ba4447-0d0d-4242-935d-8087718d36b5"), Name = OrderItemOperationClaims.Delete },
+
+            new() { Id = Guid.Parse("65f7e5d9-221d-416a-b447-165ee25e0174"), Name = CategoryOperationClaims.Admin },
+            new() { Id = Guid.Parse("8d887ad1-4f78-45f7-af05-39528dd5f057"), Name = CategoryOperationClaims.Write },
+            new() { Id = Guid.Parse("3b9a774d-3d8b-419e-adef-2a0d3909875b"), Name = CategoryOperationClaims.Read },
+            new() { Id = Guid.Parse("646cc778-65fe-4f48-baf9-eafd50912044"), Name = CategoryOperationClaims.Create },
+            new() { Id = Guid.Parse("a6d3bc82-3a7e-4bb1-93b8-7b6eb8254754"), Name = CategoryOperationClaims.Update },
+            new() { Id = Guid.Parse("cd6c5aba-a7d4-42be-b9cb-f3f962d5d723"), Name = CategoryOperationClaims.Delete },
         ];
     }
 }

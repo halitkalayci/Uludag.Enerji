@@ -1,0 +1,5 @@
+CategoryNotFound: "Category not found."
+CategoryNameCannotBeEmpty: "Category name cannot be empty."
+CategoryNameTooLong: "Category name cannot be longer than 100 characters."
+CategoryNameAlreadyExists: "A category with this name already exists."
+CategoryHasProducts: "A category that has products cannot be deleted."

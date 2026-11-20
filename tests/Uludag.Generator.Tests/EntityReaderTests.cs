@@ -40,11 +40,11 @@ namespace Uludag.Generator.Tests
         public void Read_FixtureEntity_ClassifiesEveryProperty()
         {
             using var repo = TestRepo.Create();
-            repo.AddEntity("Category", Fixtures.Category);
+            repo.AddEntity("Topic", Fixtures.Topic);
 
-            EntityModel category = EntityReader.Read(repo.Layout).FindEntity("Category")!;
+            EntityModel topic = EntityReader.Read(repo.Layout).FindEntity("Topic")!;
 
-            var kinds = category.Properties.ToDictionary(p => p.Name, p => (p.Kind, p.IsNullable));
+            var kinds = topic.Properties.ToDictionary(p => p.Name, p => (p.Kind, p.IsNullable));
             Assert.Equal((PropertyKind.Id, false), kinds["Id"]);
             Assert.Equal((PropertyKind.Scalar, false), kinds["Name"]);
             Assert.Equal((PropertyKind.Scalar, true), kinds["Description"]);
@@ -54,25 +54,25 @@ namespace Uludag.Generator.Tests
             Assert.Equal((PropertyKind.Scalar, false), kinds["Status"]);          // enum
             Assert.Equal((PropertyKind.Money, false), kinds["MinimumPrice"]);
             Assert.Equal((PropertyKind.Scalar, false), kinds["UserId"]);
-            Assert.Equal((PropertyKind.Scalar, true), kinds["ParentCategoryId"]);
+            Assert.Equal((PropertyKind.Scalar, true), kinds["ParentTopicId"]);
             Assert.Equal((PropertyKind.Unknown, true), kinds["Image"]);          // dizi
             Assert.Equal((PropertyKind.Navigation, false), kinds["User"]);
             Assert.Equal((PropertyKind.Collection, false), kinds["Products"]);
             Assert.False(kinds.ContainsKey("DisplayName")); // hesaplanan (=>) özellik
             Assert.False(kinds.ContainsKey("Counter"));     // static
-            Assert.True(category.Properties.Single(p => p.Name == "UserId").IsIdentityBound);
+            Assert.True(topic.Properties.Single(p => p.Name == "UserId").IsIdentityBound);
         }
 
         [Fact]
         public void Read_EnumInEntitiesFolder_IsNotAnEntity()
         {
             using var repo = TestRepo.Create();
-            repo.AddEntity("Category", Fixtures.Category);
+            repo.AddEntity("Topic", Fixtures.Topic);
 
             DomainModel domain = EntityReader.Read(repo.Layout);
 
-            Assert.Null(domain.FindEntity("CategoryStatus"));
-            Assert.Equal("ECommerce.Domain.Entities", domain.Enums["CategoryStatus"]);
+            Assert.Null(domain.FindEntity("TopicStatus"));
+            Assert.Equal("ECommerce.Domain.Entities", domain.Enums["TopicStatus"]);
             Assert.Contains("Money", domain.ValueObjects);
         }
 

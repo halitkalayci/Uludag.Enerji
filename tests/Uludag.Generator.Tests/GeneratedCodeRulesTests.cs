@@ -11,7 +11,7 @@ namespace Uludag.Generator.Tests
     {
         public static TheoryData<string, string> Entities => new()
         {
-            { "Category", Fixtures.Category },
+            { "Topic", Fixtures.Topic },
             { "Coupon", Fixtures.Coupon },
             { "PriceAlert", Fixtures.PriceAlert },
         };

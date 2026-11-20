@@ -1,4 +1,4 @@
-﻿using ECommerce.Domain.Entities;
+using ECommerce.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using System;
@@ -48,6 +48,15 @@ namespace ECommerce.Persistence.Configurations
             });
 
             builder.Navigation(p => p.Price).IsRequired();
+
+            // BR-13: ürünün sıfır ya da bir kategorisi vardır. BR-14: ürünü olan kategori silinemez —
+            // kural CategoryBusinessRules'ta; Restrict, kural ile silme arasındaki yarışta veriyi korur.
+            builder
+                .HasOne(p => p.Category)
+                .WithMany(c => c.Products)
+                .HasForeignKey(p => p.CategoryId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

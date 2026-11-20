@@ -62,5 +62,10 @@ namespace ECommerce.Application.Services.ProductService
 
             await IncreaseStockAsync(product, amount, cancellationToken);
         }
+
+        public async Task<bool> AnyInCategoryAsync(Guid categoryId, CancellationToken cancellationToken = default)
+        {
+            return await productRepository.AnyInCategoryAsync(categoryId, cancellationToken);
+        }
     }
 }
