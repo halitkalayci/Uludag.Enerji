@@ -26,6 +26,7 @@ namespace ECommerce.Persistence.Contexts
         public DbSet<UserOperationClaim> UserOperationClaims => Set<UserOperationClaim>();
         public DbSet<OtpAuthenticator> OtpAuthenticators => Set<OtpAuthenticator>();
         public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+        public DbSet<Category> Categories => Set<Category>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
